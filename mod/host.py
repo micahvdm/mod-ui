@@ -3810,8 +3810,7 @@ class Host(object):
             # ensure unique title
             newTitle = title = get_unique_name(title, get_all_pedalboard_names()) or title
             titlesym = symbolify(title)[:16]
-
-            lv2path = os.path.expanduser("~/.pedalboards/")
+            lv2path = LV2_PEDALBOARDS_DIR
             trypath = os.path.join(lv2path, "%s.pedalboard" % titlesym)
 
             # if trypath already exists, generate a random bundlepath based on title
