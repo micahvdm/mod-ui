@@ -1822,13 +1822,20 @@ Desktop.prototype.loadPedalboard = function (bundlepath, callback) {
             url: '/pedalboard/load_bundle/',
             type: 'POST',
             data: {
-                bundlepath: bundlepath
+                bundlepath: bundlepath,
+                isDefault: bundlepath == DEFAULT_PEDALBOARD ? '1' : '0'
             },
             success: function (resp) {
                 if (! resp.ok) {
                     callback(false)
                     return
                 }
+
+                if (bundlepath == DEFAULT_PEDALBOARD) {
+                    callback(true)
+                    return
+                }
+
                 self.title = resp.name
                 self.pedalboardBundle = bundlepath
                 self.pedalboardEmpty = false
