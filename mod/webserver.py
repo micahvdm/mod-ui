@@ -11,6 +11,8 @@ import subprocess
 import sys
 import time
 
+sys.modules['tornado'] = __import__('tornado4')
+
 from base64 import b64decode, b64encode
 from datetime import timedelta
 from random import randint
