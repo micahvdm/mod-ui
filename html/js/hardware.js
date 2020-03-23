@@ -805,8 +805,14 @@ function HardwareManager(options) {
 
         var actuators = self.availableActuators(instance, port, currentAddressing.tempo)
         var typeOptions = [kNullAddressURI, deviceOption, kMidiLearnURI, ccOption, cvOption]
+        var hiddenOptions = [deviceOption, ccOption]
         var i = 0
         typeSelect.find('option').unwrap().each(function() {
+            if (hiddenOptions.includes(typeOptions[i])) {
+              $(this).remove()
+              i++
+              return
+            }
             var btn = $('<div class="btn js-type" data-value="'+typeOptions[i]+'">'+$(this).text()+'</div>');
             var jbtn = $(btn);
             if(jbtn.attr('data-value') == typeInput.val()) {
@@ -819,6 +825,7 @@ function HardwareManager(options) {
             // Hide MIDI tab if not available
             else if (jbtn.attr('data-value') === kMidiLearnURI && !actuators[kMidiLearnURI]) {
               jbtn.hide()
+              form.find('.midi-no-mapping-possible').show()
             }
             // Hide CV tab if not available
             else if (jbtn.attr('data-value') === cvOption && !self.isCvAvailable(port)) {
