@@ -4,7 +4,7 @@
 <!-- HEAD -->
 <head>
 <meta charset="UTF-8">
-<title>MOD</title>
+<title>pi-Stomp</title>
 
 <link rel="apple-touch-icon" sizes="57x57" href="img/favicon/apple-icon-57x57.png">
 <link rel="apple-touch-icon" sizes="60x60" href="img/favicon/apple-icon-60x60.png">
@@ -618,12 +618,12 @@ $('document').ready(function() {
         <div id="mod-pedalboard" class="icon" data-message="Pedalboards Library"></div>
         <div id="mod-bank" class="icon" data-message="Banks"></div>
         <div id="mod-file-manager" class="icon" data-message="File Manager"></div>
-        <div id="mod-cloud-plugins" class="icon" data-message="Plugin Store"></div>
+        <div id="mod-cloud-plugins" class="icon mod-hidden" data-message="Plugin Store"></div>
         <div id="banks-saving">Auto saving banks...</div>
-        <div id="mod-update" class="status icon"></div>
+        <div id="mod-update" class="icon mod-hidden"></div>
         <div id="mod-status" class="status icon mod-hidden"></div>
         <div id="mod-devices" class="status icon"></div>
-        <div id="mod-settings" class="status icon mod-settings" data-message="Go to settings screen"></div>
+        <div id="mod-settings" class="icon mod-hidden" data-message="Go to settings screen"></div>
         <div id="mod-ram" class="icon">
             <div class="progress" id="ram-bar" style="width: 100%;">
                 <div class="bar"></div> <!-- not sure if this is needed -->
@@ -638,7 +638,7 @@ $('document').ready(function() {
         </div>
         <div id="mod-cpu-stats" class="icon mod-hidden">0 GHz / 0 &deg;C</div>
         <div id="mod-xruns" class="icon mod-hidden">0 Xruns</div>
-        <div id="mod-buffersize" class="icon mod-hidden">{{bufferSize}} frames</div>
+        <div id="mod-buffersize" class="icon">{{bufferSize}} frames</div>
         <div id="mod-bypassRight" class="icon mod-bypass">Bypass 2</div>
         <div id="mod-bypassLeft" class="icon mod-bypass">Bypass 1</div>
         <div id="mod-show-midi-port" class="icon">MIDI Ports</div>
