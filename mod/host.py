@@ -1468,6 +1468,20 @@ class Host(object):
 
     # -----------------------------------------------------------------------------------------------------------------
     # Message handling
+    
+    def pi_stomp_param_get(self, port):
+        instance, symbol = port.rsplit("/", 1)
+        instance_id = self.mapper.get_id_without_creating(instance)
+        pluginData  = self.plugins[instance_id]
+
+        if symbol == ":bypass":
+            return pluginData['bypassed']
+
+        if symbol in pluginData['designations']:
+            print("ERROR: Trying to modify a specially designated port '%s', stop!" % symbol)
+            return
+
+        return pluginData['ports'][symbol]
 
     def process_read_message(self, msg):
         msg = msg[:-1].decode("utf-8", errors="ignore")
