@@ -2,12 +2,12 @@
 CC  ?= gcc
 CXX ?= g++
 
-CFLAGS += -Wall -Wextra -std=c99 -fPIC -O3
-CXXFLAGS += -Wall -Wextra -Wshadow -std=gnu++0x -fPIC -O3
+CFLAGS += -mcpu=cortex-a53 -mtune=cortex-a53 -Wall -Wextra -std=c99 -fPIC -Ofast
+CXXFLAGS += -mcpu=cortex-a53 -mtune=cortex-a53 -Wall -Wextra -Wshadow -std=gnu++0x -fPIC -Ofast
 ifneq (,$(findstring apple,$(shell $(CC) -dumpmachine)))
 LDFLAGS += -Wl,-dead_strip -Wl,-dead_strip_dylibs -Wl,-x
 else
-LDFLAGS += -Wl,-O1 -Wl,--no-undefined -Wl,--strip-all
+LDFLAGS += -Wl,-O3 -Wl,--no-undefined -Wl,--strip-all
 endif
 
 ifeq ($(shell pkg-config --atleast-version=0.22.0 lilv-0 && echo true), true)
