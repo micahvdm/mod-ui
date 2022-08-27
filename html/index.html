@@ -61,6 +61,7 @@
     var TEMPLATES = {}
     SITEURL = '{{cloud_url}}'
     CLOUD_LABS_URL = '{{cloud_labs_url}}'
+    PATCHSTORAGE_API_URL = 'https://patchstorage.com/api/alpha/patches'
     PLUGINS_URL      = '{{plugins_url}}'
     PEDALBOARDS_URL  = '{{pedalboards_url}}'
     PEDALBOARDS_LABS_URL  = '{{pedalboards_labs_url}}'
@@ -127,6 +128,8 @@ $('document').ready(function() {
         pedalboardTrigger: $('#main-menu #mod-plugins'),
         cloudPluginBox: $('#cloud-plugins-library'),
         cloudPluginBoxTrigger: $('#mod-cloud-plugins'),
+        patchstorageBox: $('#patchstorage-library'),
+        patchstorageBoxTrigger: $('#patchstorage'),
         pedalboardBox: $('#pedalboards-library'),
         pedalboardBoxTrigger: $('#main-menu #mod-pedalboard'),
         bankBox: $('#bank-library'),
@@ -179,12 +182,16 @@ $('document').ready(function() {
     } else {
         desktop.upgradeWindow.upgradeWindow('setErrored')
 
+        // HACK:
+        if (!{{patchstorage_enabled}}) {
         // hide stuff that is only relevant to MOD Devices
         $('#mod-bypassLeft').hide()
         $('#mod-bypassRight').hide()
         $('#mod-cloud-plugins').hide()
         $('#mod-update').hide()
         $('#pedalboard-info').find('.js-cloud').hide()
+            $('#patchstorage').hide()
+        }
 
         // show other stuff to make it less empty
         $('#mod-xruns').show()
@@ -268,6 +275,7 @@ $('document').ready(function() {
 <script type="text/javascript" src="js/banks.js?v={{version}}"></script>
 <script type="text/javascript" src="js/effects.js?v={{version}}"></script>
 <script type="text/javascript" src="js/cloudplugin.js?v={{version}}"></script>
+<script type="text/javascript" src="js/patchstorage.js?v={{version}}"></script>
 <script type="text/javascript" src="js/mididevices.js?v={{version}}"></script>
 <script type="text/javascript" src="js/snapshot.js?v={{version}}"></script>
 <script type="text/javascript" src="js/hardware.js?v={{version}}"></script>
@@ -625,6 +633,7 @@ $('document').ready(function() {
         <div id="mod-bank" class="icon" data-message="Banks"></div>
         <div id="mod-file-manager" class="icon" data-message="File Manager"></div>
         <div id="mod-cloud-plugins" class="icon" data-message="Plugin Store"></div>
+        <div id="patchstorage" class="icon" data-message="Patchstorage"></div>
         <div id="banks-saving">Auto saving banks...</div>
         <div id="mod-update" class="status icon"></div>
         <div id="mod-status" class="status icon mod-hidden"></div>
@@ -804,6 +813,89 @@ $('document').ready(function() {
         </div>
     </div>
     <!-- END CLOUD PLUGINS LIBRARY -->
+
+    <!-- PATCHSTORAGE -->
+    <div id="patchstorage-library" class="mod-hidden mod-init-hidden">
+        <div>
+            <header>
+                <h1 class="bottom top">PATCHSTORAGE</h1>
+                <button class="status icon mod-bypass" id="patchstorage_update_all">Update All</button>
+                <button class="status icon mod-bypass mod-hidden" id="patchstorage_install_all">Install All</button>
+            </header>
+
+            <div class="filter clearfix">
+                <h2>Filter</h2>
+                <div class="control-group">
+                    <input type="checkbox" name="installed" id="patchstorage-installed" />
+                    <label for="patchstorage-installed">Installed only</label>
+                </div>
+                <div class="control-group">
+                    <input type="checkbox" name="non-installed" id="patchstorage-non-installed" />
+                    <label for="patchstorage-non-installed">Non-Installed only</label>
+                </div>
+                <div class="control-group mod-hidden">
+                    <input type="checkbox" name="unstable" id="patchstorage-unstable" />
+                    <label for="patchstorage-unstable">Show beta plugins</label>
+                </div>
+                <div class="control-group mod-hidden">
+                    <div class="switch" id="patchstorage-source">
+                      <input type="radio" id="cloud-radio-official" name="plugins-source" value="official" checked="checked">
+                      <label for="official">Official</label>
+                      <input type="radio" id="cloud-radio-labs" name="plugins-source" value="labs">
+                      <label for="labs">Labs</label>
+                      <span class="toggle-outside">
+                        <span class="toggle-inside"></span>
+                      </span>
+                    </div>
+                </div>
+                <ul class="categories list list-unstyled">
+                    <li id="patchstorage-tab-All">All</li>
+                    <li id="patchstorage-tab-ControlVoltage">Control&nbsp;Voltage</li>
+                    <li id="patchstorage-tab-Delay">Delay</li>
+                    <li id="patchstorage-tab-Distortion">Distortion</li>
+                    <li id="patchstorage-tab-Dynamics">Dynamics</li>
+                    <li id="patchstorage-tab-Filter">Filter</li>
+                    <li id="patchstorage-tab-Generator">Generator</li>
+                    <li id="patchstorage-tab-MIDI">MIDI Utility</li>
+                    <li id="patchstorage-tab-Modulator">Modulator</li>
+                    <li id="patchstorage-tab-Reverb">Reverb</li>
+                    <li id="patchstorage-tab-Simulator">Simulator</li>
+                    <li id="patchstorage-tab-Spatial">Spatial</li>
+                    <li id="patchstorage-tab-Spectral">Spectral</li>
+                    <li id="patchstorage-tab-Utility">Utility</li>
+                    <!-- <li id="patchstorage-tab-MaxGen">Max&nbsp;gen~</li> -->
+                    <!-- <li id="patchstorage-tab-Camomile">Camomile</li> -->
+                </ul>
+                <div class="form-group">
+                    <input class="form-control" placeholder="Filter by keyword(s)" type="search" autocomplete="off" />
+                </div>
+            </div>
+
+            <div class="patchstorage-plugins clearfix js-patchstorage">
+              <div id="patchstorage-results-wrapper">
+					<h2>Filtered results</h2>
+                    <div id="patch-content-All" class="plugins-wrapper"></div>
+                    <div id="patch-content-ControlVoltage" class="plugins-wrapper"></div>
+                    <div id="patch-content-Delay" class="plugins-wrapper"></div>
+                    <div id="patch-content-Distortion" class="plugins-wrapper"></div>
+                    <div id="patch-content-Dynamics" class="plugins-wrapper"></div>
+                    <div id="patch-content-Filter" class="plugins-wrapper"></div>
+                    <div id="patch-content-Generator" class="plugins-wrapper"></div>
+                    <div id="patch-content-MIDI" class="plugins-wrapper"></div>
+                    <div id="patch-content-Modulator" class="plugins-wrapper"></div>
+                    <div id="patch-content-Reverb" class="plugins-wrapper"></div>
+                    <div id="patch-content-Simulator" class="plugins-wrapper"></div>
+                    <div id="patch-content-Spatial" class="plugins-wrapper"></div>
+                    <div id="patch-content-Spectral" class="plugins-wrapper"></div>
+                    <div id="patch-content-Utility" class="plugins-wrapper"></div>
+                    <!-- <div id="cloud-plugin-content-MaxGen" class="plugins-wrapper"></div> -->
+                    <!-- <div id="cloud-plugin-content-Camomile" class="plugins-wrapper"></div> -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <!-- END PATCHSTORAGE -->
 
     <!-- PEDALBOARDS LIBRARY -->
     <div id="pedalboards-library" class="mod-hidden mod-init-hidden">
