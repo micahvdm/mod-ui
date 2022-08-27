@@ -48,6 +48,8 @@ function Desktop(elements) {
         effectBoxTrigger: $('<div>'),
         cloudPluginBox: $('<div>'),
         cloudPluginBoxTrigger: $('<div>'),
+        patchstorageBox: $('<div>'),
+        patchstorageBoxTrigger: $('<div>'),
         pedalboardTrigger: $('<div>'),
         fileManagerBox: $('<div>'),
         fileManagerBoxTrigger: $('<div>'),
@@ -378,6 +380,7 @@ function Desktop(elements) {
         $('#wrapper').css('z-index', -1)
         $('#plugins-library').css('z-index', -1)
         $('#cloud-plugins-library').css('z-index', -1)
+        $('#patchstorage-library').css('z-index', -1)
         $('#pedalboards-library').css('z-index', -1)
         $('#bank-library').css('z-index', -1)
         $('#main-menu').css('z-index', -1)
@@ -739,6 +742,8 @@ function Desktop(elements) {
                                         elements.effectBoxTrigger)
     this.cloudPluginBox = self.makeCloudPluginBox(elements.cloudPluginBox,
                                                   elements.cloudPluginBoxTrigger)
+    this.patchstorageBox = self.makePatchstorageBox(elements.patchstorageBox,
+                                                  elements.patchstorageBoxTrigger)
     this.pedalboardBox = self.makePedalboardBox(elements.pedalboardBox,
                                                 elements.pedalboardBoxTrigger)
     this.bankBox = self.makeBankBox(elements.bankBox,
@@ -1280,6 +1285,7 @@ function Desktop(elements) {
     elements.pedalboardBoxTrigger.statusTooltip()
     elements.bankBoxTrigger.statusTooltip()
     elements.cloudPluginBoxTrigger.statusTooltip()
+    elements.patchstorageBoxTrigger.statusTooltip()
     elements.fileManagerBoxTrigger.statusTooltip()
 
     this.upgradeWindow = elements.upgradeWindow.upgradeWindow({
@@ -1715,6 +1721,45 @@ Desktop.prototype.makeCloudPluginBox = function (el, trigger) {
     })
 }
 
+Desktop.prototype.makePatchstorageBox = function (el, trigger) {
+    var self = this
+    return el.patchstorageBox({
+        trigger: trigger,
+        windowManager: this.windowManager,
+        list: self.cloudPluginListFunction,
+        removePluginBundles: function (bundles, callback) {
+            if (!confirm('You are about to remove this plugin and any other in the same bundle. This may break pedalboards that depend on them.'))
+                return
+            self.previousPedalboardList = null
+            $.ajax({
+                url: '/package/uninstall',
+                data: JSON.stringify(bundles),
+                method: 'POST',
+                success: function(resp) {
+                    if (resp.ok) {
+                        callback(resp)
+                    } else {
+                        new Notification('error', "Could not uninstall bundle: " + resp.error)
+                    }
+                },
+                error: function () {
+                    new Notification('error', "Failed to uninstall plugin")
+                },
+                cache: false,
+                dataType: 'json'
+            })
+        },
+        upgradePluginURI: function (uri, usingLabs, callback) {
+            self.previousPedalboardList = null
+            self.installationQueue.installUsingURI(uri, usingLabs, callback)
+        },
+        installPluginURI: function (uri, usingLabs, callback) {
+            self.previousPedalboardList = null
+            self.installationQueue.installUsingURI(uri, usingLabs, callback)
+        }
+    })
+}
+
 Desktop.prototype.makeBankBox = function (el, trigger) {
     var self = this
     el.bankBox({
@@ -2110,6 +2155,9 @@ function enable_dev_mode(skipSaveConfig) {
     $('#cloud_install_all').show()
     $('#cloud_update_all').show()
 
+    $('#patchstorage_install_all').show()
+    $('#patchstorage_update_all').show()
+
     // network and controller ping times
     $('#mod-status').show().statusTooltip('updatePosition')
 
@@ -2146,6 +2194,9 @@ function disable_dev_mode() {
     // install/update all plugins
     $('#cloud_install_all').hide()
     $('#cloud_update_all').hide()
+
+    $('#patchstorage_install_all').hide()
+    $('#patchstorage_update_all').hide()
 
     // network and controller ping times
     $('#mod-status').hide()
