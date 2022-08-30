@@ -2141,9 +2141,6 @@ function enable_dev_mode(skipSaveConfig) {
     $('#cloud_install_all').show()
     $('#cloud_update_all').show()
 
-    $('#patchstorage_install_all').show()
-    $('#patchstorage_update_all').show()
-
     // network and controller ping times
     $('#mod-status').show().statusTooltip('updatePosition')
 
@@ -2180,9 +2177,6 @@ function disable_dev_mode() {
     // install/update all plugins
     $('#cloud_install_all').hide()
     $('#cloud_update_all').hide()
-
-    $('#patchstorage_install_all').hide()
-    $('#patchstorage_update_all').hide()
 
     // network and controller ping times
     $('#mod-status').hide()
