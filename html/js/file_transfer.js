@@ -86,6 +86,7 @@ function SimpleTransference(from, to, options) {
             dataType: 'binary',
             cache: false,
             global: false,
+            json: false,
             error: function (resp) {
                 if (resp.status == 401 && self.reauthorizeDownload != null && ! self.reauthorizedDownload) {
                     console.log("[TRANSFERENCE] download unauthorized, retrying authentication...")
@@ -112,6 +113,7 @@ function SimpleTransference(from, to, options) {
     }
 
     this.upload = function (file) {
+        console.log(file)
         self.reauthorizedDownload = false
         var req = $.ajax($.extend({
             method: 'POST',
