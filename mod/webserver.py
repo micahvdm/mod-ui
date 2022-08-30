@@ -23,6 +23,7 @@ import shutil
 import subprocess
 import sys
 import time
+import tarfile
 
 sys.modules['tornado'] = __import__('tornado4')
 
@@ -84,15 +85,19 @@ gState = GlobalWebServerState()
 gState.favorites = []
 
 @gen.coroutine
-def install_bundles_in_tmp_dir(callback):
+def install_bundles_in_tmp_dir(options, callback):
     error     = ""
     removed   = []
     installed = []
+    bundles   = []
     pluginsWereRemoved = False
+    patchstorage_id = None
 
     for bundle in os.listdir(DOWNLOAD_TMP_DIR):
         tmppath    = os.path.join(DOWNLOAD_TMP_DIR, bundle)
         bundlepath = os.path.join(LV2_PLUGIN_DIR, bundle)
+
+        bundles.append(bundle)
 
         if os.path.exists(bundlepath):
             resp, data = yield gen.Task(SESSION.host.remove_bundle, bundlepath, True, None)
@@ -140,13 +145,16 @@ def install_bundles_in_tmp_dir(callback):
             list_banks(broken)
 
     if error or len(installed) == 0:
+        msg = error or "No plugins found in bundle"
+
         # Delete old temp files
         for bundle in os.listdir(DOWNLOAD_TMP_DIR):
+            logging.warning(f'bundle: {bundle}, msg: {msg}')
             shutil.rmtree(os.path.join(DOWNLOAD_TMP_DIR, bundle))
 
         resp = {
             'ok'       : False,
-            'error'    : error or "No plugins found in bundle",
+            'error'    : msg,
             'removed'  : removed,
             'installed': [],
         }
@@ -155,6 +163,7 @@ def install_bundles_in_tmp_dir(callback):
             'ok'       : True,
             'removed'  : removed,
             'installed': installed,
+            'bundles'  : bundles
         }
 
     os.sync()
@@ -174,7 +183,8 @@ def run_command(args, cwd, callback):
 
     ioloop.add_handler(proc.stdout.fileno(), end_fileno, 16)
 
-def install_package(filename, callback):
+def install_package(filename, options, callback):
+    
     if not os.path.exists(filename):
         callback({
             'ok'       : False,
@@ -185,9 +195,22 @@ def install_package(filename, callback):
         return
 
     def end_untar_pkgs(resp):
-        os.remove(filename)
-        install_bundles_in_tmp_dir(callback)
+        bundlenames = None
+        psid = options.get("psid")
 
+        if psid is not None:
+            with tarfile.open(filename) as f:
+                bundlenames = f.getnames()
+            
+            for name in bundlenames:
+                if not any(s in name for s in ["/", "\\"]) and os.path.isdir(os.path.join(DOWNLOAD_TMP_DIR, name)):            
+                    with open(os.path.join(DOWNLOAD_TMP_DIR, name, f"psid_{psid}"), 'w') as f:
+                        pass
+
+        os.remove(filename)
+        install_bundles_in_tmp_dir(options, callback)
+    
+    logging.info(f'Installing: {filename}')
     run_command(['tar','zxf', filename], DOWNLOAD_TMP_DIR, end_untar_pkgs)
 
 @gen.coroutine
@@ -321,13 +344,13 @@ class SimpleFileReceiver(JsonRequestHandler):
             os.mkdir(self.destination_dir)
         with open(os.path.join(self.destination_dir, basename), 'wb') as fh:
             fh.write(self.request.body)
-        yield gen.Task(self.process_file, basename)
+        yield gen.Task(self.process_file, basename, self.request.headers)
         self.write({
             'ok'    : True,
             'result': self.result
         })
 
-    def process_file(self, basename, callback=lambda:None):
+    def process_file(self, basename, headers, callback=lambda:None):
         """to be overriden"""
 
 @web.stream_request_body
@@ -737,12 +760,20 @@ class EffectInstaller(SimpleFileReceiver):
 
     @web.asynchronous
     @gen.engine
-    def process_file(self, basename, callback=lambda:None):
+    def process_file(self, basename, headers, callback=lambda:None):
+        options = {}
+        
+        # TODO: remove this, once a better solution is found
+        psids = self.request.headers.get_list("Patchstorage-Item")
+        if len(psids) > 0:
+            options["psid"] = psids[0]
+
         def on_finish(resp):
             reset_get_all_pedalboards_cache(kPedalboardInfoBoth)
             self.result = resp
             callback()
-        install_package(os.path.join(DOWNLOAD_TMP_DIR, basename), on_finish)
+        
+        install_package(os.path.join(DOWNLOAD_TMP_DIR, basename), options, on_finish)
 
 class EffectBulk(JsonRequestHandler):
     def prepare(self):
@@ -777,7 +808,8 @@ class SDKEffectInstaller(EffectInstaller):
         with open(filename, 'wb') as fh:
             fh.write(b64decode(upload['body']))
 
-        resp = yield gen.Task(install_package, filename)
+        # TODO: filename vs callback?
+        resp = yield gen.Task(install_package, {}, filename)
 
         if resp['ok']:
             SESSION.msg_callback("rescan " + b64encode(json.dumps(resp).encode("utf-8")).decode("utf-8"))
