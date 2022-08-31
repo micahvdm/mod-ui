@@ -118,6 +118,8 @@ def toPythonType(value, attr):
         return structPtrPtrToList(value)
     if isinstance(value, c_union_types):
         return unionToDict(value)
+    if value is None:
+        return None
     print("..............", attr, ".....................", value, ":", type(value))
     return value
 
@@ -290,6 +292,12 @@ class PluginPreset(Structure):
         ("path", c_char_p),
     ]
 
+class PatchstorageInfo(Structure):
+    _fields_ = [
+        ("version", c_char_p),
+        ("id", c_char_p)
+    ]
+
 class PluginInfo(Structure):
     _fields_ = [
         ("valid", c_bool),
@@ -315,6 +323,7 @@ class PluginInfo(Structure):
         ("ports", PluginPorts),
         ("parameters", POINTER(PluginParameter)),
         ("presets", POINTER(PluginPreset)),
+        ("patchstorage", PatchstorageInfo),
     ]
 
 # a subset of PluginInfo
@@ -340,6 +349,7 @@ class PluginInfo_Mini(Structure):
         ("builder", c_int),
         ("licensed", c_int),
         ("gui", PluginGUI_Mini),
+        ("patchstorage", PatchstorageInfo),
     ]
 
 class PluginInfo_Essentials(Structure):
@@ -494,7 +504,8 @@ c_struct_types = (PluginAuthor,
                   PluginLongParameterRanges,
                   PedalboardMidiControl,
                   PedalboardHardware,
-                  PedalboardTimeInfo)
+                  PedalboardTimeInfo,
+                  PatchstorageInfo)
 
 c_structp_types = (POINTER(PluginGUIPort),
                    POINTER(PluginPortScalePoint),

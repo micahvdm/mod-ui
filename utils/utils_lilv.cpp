@@ -16,6 +16,7 @@
  */
 
 #include "utils.h"
+#include "patchstorage.h"
 
 #include <libgen.h>
 #include <limits.h>
@@ -111,6 +112,7 @@ static const bool kAllowRegularCV = getenv("MOD_UI_ALLOW_REGULAR_CV") != nullptr
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr, 0, 0, 0, 0, 0,             \
     { nullptr, nullptr, nullptr },               \
+    { nullptr, nullptr },                        \
     false                                        \
 }
 
@@ -136,7 +138,8 @@ static const bool kAllowRegularCV = getenv("MOD_UI_ALLOW_REGULAR_CV") != nullptr
         { nullptr, nullptr }                         \
     },                                               \
     nullptr,                                         \
-    nullptr                                          \
+    nullptr,                                         \
+    { nullptr, nullptr }                             \
 }
 
 // Blacklisted plugins, which don't work properly on MOD for various reasons
@@ -1613,6 +1616,9 @@ const PluginInfo_Mini& _get_plugin_info_mini(const LilvPlugin* const p, const Na
         info.gui.thumbnail  = nc;
     }
 
+    const char* const bundleuri = lilv_node_as_uri(lilv_plugin_get_bundle_uri(p));
+    patchstorage_read_info(&info.psInfo, bundleuri);
+
     // --------------------------------------------------------------------------------------------------------
 
     info.valid = true;
@@ -2796,6 +2802,8 @@ const PluginInfo& _get_plugin_info(const LilvPlugin* const p, const NamespaceDef
 
     // --------------------------------------------------------------------------------------------------------
 
+    patchstorage_read_info(&info.psInfo, bundleuri);
+
     lilv_free((void*)bundle);
 
     info.valid = true;
@@ -3218,6 +3226,8 @@ static void _clear_plugin_info(PluginInfo& info)
         delete[] info.presets;
     }
 
+    patchstorage_free_info(&info.psInfo);
+
     memset(&info, 0, sizeof(PluginInfo));
 }
 
@@ -3244,6 +3254,7 @@ static void _clear_plugin_info_mini(PluginInfo_Mini& info)
             free((void*)info.gui.screenshot);
         if (info.gui.thumbnail != nc)
             free((void*)info.gui.thumbnail);
+        patchstorage_free_info(&info.psInfo);
     }
 
     memset(&info, 0, sizeof(PluginInfo_Mini));
@@ -3459,6 +3470,8 @@ static void _fill_plugin_info_mini_from_full(const PluginInfo& info2, PluginInfo
         info.gui.resourcesDirectory = info2.gui.resourcesDirectory;
         info.gui.screenshot = info2.gui.screenshot;
         info.gui.thumbnail  = info2.gui.thumbnail;
+
+        memcpy(&info.psInfo, &info2.psInfo, sizeof(info.psInfo));
 
         info.valid = true;
     }
