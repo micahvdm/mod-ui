@@ -16,6 +16,7 @@
  */
 
 #include "utils.h"
+#include "patchstorage.h"
 
 #include <libgen.h>
 #include <limits.h>
@@ -152,7 +153,8 @@ static const bool kAllowRegularCV = getenv("MOD_UI_ALLOW_REGULAR_CV") != nullptr
         { nullptr, nullptr }                         \
     },                                               \
     nullptr,                                         \
-    nullptr                                          \
+    nullptr,                                         \
+    { nullptr, nullptr }                             \
 }
 
 // Blacklisted plugins, which don't work properly on MOD for various reasons
@@ -1787,6 +1789,9 @@ const PluginInfo_Mini* _get_plugin_info_mini(LilvWorld* const w,
         info->gui.thumbnail  = nc;
     }
 
+    const char* const bundleuri = lilv_node_as_uri(lilv_plugin_get_bundle_uri(p));
+    patchstorage_read_info(&info.psInfo, bundleuri);
+
     // --------------------------------------------------------------------------------------------------------
 
     return info;
@@ -3034,6 +3039,8 @@ const PluginInfo& _get_plugin_info(LilvWorld* const w,
 
     // --------------------------------------------------------------------------------------------------------
 
+    patchstorage_read_info(&info.psInfo, bundleuri);
+
     lilv_free((void*)bundle);
 
     info.valid = true;
@@ -3565,6 +3572,8 @@ static void _clear_plugin_info(PluginInfo& info)
         }
         delete[] info.presets;
     }
+
+    patchstorage_free_info(&info.psInfo);
 
     memset(&info, 0, sizeof(PluginInfo));
 }
