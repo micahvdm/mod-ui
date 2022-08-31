@@ -4,6 +4,8 @@
 #ifndef MOD_UTILS_H_INCLUDED
 #define MOD_UTILS_H_INCLUDED
 
+#include "patchstorage.h"
+
 #ifdef __cplusplus
 #include <cstdint>
 extern "C" {
@@ -183,6 +185,7 @@ typedef struct {
     PluginPorts ports;
     const PluginParameter* parameters;
     const PluginPreset* presets;
+    patchstorage_info_t psInfo;
 } PluginInfo;
 
 typedef struct {
@@ -205,6 +208,7 @@ typedef struct {
     int licensed; // PluginLicenseType
     int iotype; // PluginIOType
     PluginGUI_Mini gui;
+    patchstorage_info_t psInfo;
 } PluginInfo_Mini;
 
 typedef struct {
