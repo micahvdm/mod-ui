@@ -204,8 +204,8 @@ def install_package(filename, options, callback):
             
             for name in bundlenames:
                 if not any(s in name for s in ["/", "\\"]) and os.path.isdir(os.path.join(DOWNLOAD_TMP_DIR, name)):            
-                    with open(os.path.join(DOWNLOAD_TMP_DIR, name, f"psid_{psid}"), 'w') as f:
-                        pass
+                    with open(os.path.join(DOWNLOAD_TMP_DIR, name, f"psid"), 'w') as f:
+                        f.write(psid + '\n')
 
         os.remove(filename)
         install_bundles_in_tmp_dir(options, callback)

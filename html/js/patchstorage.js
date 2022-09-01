@@ -10,6 +10,15 @@ function getDummyPluginData() {
     })
 }
 
+function objectEmpty(obj) {
+    for (var i in obj) return false
+    return true
+}
+
+function consoleLog(msg) {
+    if (false) console.log(msg)
+}
+
 
 JqueryClass('patchstorageBox', {
     init: function (options) {
@@ -25,12 +34,13 @@ JqueryClass('patchstorageBox', {
             //     callback({}, "")
             // },
             info: null,
-            fake: false,
             isMainWindow: true,
             windowName: "Patchstorage",
             pluginsData: {},
-            localChecked: false,
-            cloudChecked: false
+            pluginLocalChecked: false,
+            pluginsLocalChecked: false,
+            pluginCloudChecked: false,
+            pluginsCloudChecked: false
         }, options)
 
         self.data(options)
@@ -86,10 +96,17 @@ JqueryClass('patchstorageBox', {
 
         self.find('input:checkbox[name=installed]').click(function (e) {
             self.find('input:checkbox[name=non-installed]').prop('checked', false)
+            self.find('input:checkbox[name=not-available]').prop('checked', false)
             self.patchstorageBox('search')
         })
         self.find('input:checkbox[name=non-installed]').click(function (e) {
             self.find('input:checkbox[name=installed]').prop('checked', false)
+            self.find('input:checkbox[name=not-available]').prop('checked', false)
+            self.patchstorageBox('search')
+        })
+        self.find('input:checkbox[name=not-available]').click(function (e) {
+            self.find('input:checkbox[name=installed]').prop('checked', false)
+            self.find('input:checkbox[name=non-installed]').prop('checked', false)
             self.patchstorageBox('search')
         })
 
@@ -102,8 +119,8 @@ JqueryClass('patchstorageBox', {
         //     }
         // })
 
-        var results = {}
-        self.data('results', results)
+        // var results = {}
+        // self.data('results', results)
 
         self.find('ul.categories li').click(function () {
             var category = $(this).attr('id').replace(/^patchstorage-tab-/, '')
@@ -144,50 +161,51 @@ JqueryClass('patchstorageBox', {
         });
     },
 
-    checkLocalScreenshot: function (plugin) {
-        if (plugin.status == 'installed') {
-            if (plugin.gui) {
-                var uri = escape(plugin.uri)
-                var ver = plugin.installedVersion.join('_')
-                plugin.screenshot_href = "/effect/image/screenshot.png?uri=" + uri + "&v=" + ver
-                plugin.thumbnail_href = "/effect/image/thumbnail.png?uri=" + uri + "&v=" + ver
-            } else {
-                plugin.screenshot_href = "/resources/pedals/default-screenshot.png"
-                plugin.thumbnail_href = "/resources/pedals/default-thumbnail.png"
-            }
-        }
-        else {
-            //if (!plugin.screenshot_available && !plugin.thumbnail_available) {
-            if (!plugin.screenshot_href && !plugin.thumbnail_href) {
-                plugin.screenshot_href = "/resources/pedals/default-screenshot.png"
-                plugin.thumbnail_href = "/resources/pedals/default-thumbnail.png"
-            }
-        }
-    },
-
+    // TODO: merge with mergePlugins
     // patchstorage patch obj to plugin
     transformPatch: function (patch) {
-        patch.psid = patch.id
+        patch.psid = patch.id.toString()
         // TODO: final uri format?
-        patch.uri = patch.id
+        patch.uri = patch.id.toString()
         patch.latestVersion = (patch.revision) ? patch.revision.split('.') : [0, 0, 0, 0]
         patch.plugin_href = patch.link
         patch.author.homepage = patch.link
         // TODO: replace replace - find a better safe solution
         patch.name = patch.title.replace(/&amp;/g, '&')
         patch.label = patch.title.replace(/&amp;/g, '&')
-        patch.comment = patch.excerpt.replace(/&amp;/g, '&')
+        patch.comment = (patch.content) ? patch.content.replace(/&amp;/g, '&') : patch.excerpt.replace(/&amp;/g, '&')
         patch.brand = patch.author.name.replace(/&amp;/g, '&')
         patch.thumbnail_href = patch.artwork.url
         patch.screenshot_href = patch.artwork.url
         patch.category = patch.categories.map((cat) => {
             return cat.name
         })
+
+        delete patch.id
+        delete patch.artwork
+        delete patch.categories
+        delete patch.code
+        delete patch.comment_count
+        delete patch.created_at
+        delete patch.custom_license_text
+        delete patch.like_count
+        delete patch.preview_url
+        delete patch.self
+        delete patch.state
+        delete patch.title
+        delete patch.tags
+        delete patch.updated_at
+        delete patch.source_code_url
+        delete patch.slug
+        delete patch.platform
+        delete patch.excerpt
+
         return patch
     },
 
     transformPatches: function (patches) {
         var self = $(this)
+
         patches.map((patch, i) => {
             patch = self.patchstorageBox('transformPatch', patch)
         })
@@ -195,11 +213,14 @@ JqueryClass('patchstorageBox', {
     },
 
     getCloudPlugins: function (query, store, callback) {
+        consoleLog("getCloudPlugins")
         var self = $(this)
         var base = PATCHSTORAGE_API_URL
         var platform = PATCHSTORAGE_PLATFORM_ID
         var url = `${base}?per_page=100&platforms=${platform}&orderby=download_count&order=asc`
         var page = 1
+
+        store.cloud = {}
 
         function getNextPage() {
             $.ajax({
@@ -215,17 +236,21 @@ JqueryClass('patchstorageBox', {
 
                     var pages = request.getResponseHeader('x-wp-totalpages')
                     var transformed = self.patchstorageBox('transformPatches', patches)
-                    store.cloud = store.cloud.concat(transformed)
+                    for (var i in transformed) {
+                        store.cloud[transformed[i].uri] = transformed[i]
+                    }
 
                     if (pages && pages > page) {
                         page++
                         getNextPage()
                     } else {
+                        self.data('pluginsCloudChecked', true)
                         callback()
                     }
                 },
                 error: (error) => {
                     new Notification('error', "Connection to Patchstorage failed!", 5000)
+                    self.data('pluginsCloudChecked', true)
                     callback()
                 }
             });
@@ -235,6 +260,11 @@ JqueryClass('patchstorageBox', {
     },
 
     getLocalPlugins: function (query, store, callback) {
+        consoleLog('getLocalPlugins')
+        var self = $(this)
+
+        store.local = {}
+        
         // TODO: fix indexer vs api
         if (query.text) {
             var lplugins = {}
@@ -251,6 +281,7 @@ JqueryClass('patchstorageBox', {
             }
 
             store.local = $.extend(true, {}, lplugins) // deep copy instead of link/reference
+            self.data('pluginsLocalChecked', true)
             callback()
         }
         else {
@@ -258,19 +289,21 @@ JqueryClass('patchstorageBox', {
                 method: 'GET',
                 url: '/effect/list',
                 success: function (plugins) {
-                    var i, plugin, allplugins = {}
-                    for (i in plugins) {
-                        plugin = plugins[i]
-
-                        plugin.installedVersion = [plugin.builder, plugin.minorVersion, plugin.microVersion, plugin.release]
-                        allplugins[plugin.uri] = plugin
+                    var lplugins = {}
+                    for (var i in plugins) {
+                        var plugin = plugins[i]
+                        // TODO:
+                        // plugin.installedVersion = [plugin.builder, plugin.minorVersion, plugin.microVersion, plugin.release]
+                        lplugins[plugin.uri] = plugin
                     }
 
-                    store.local = $.extend(true, {}, allplugins) // deep copy instead of link/reference
+                    store.local = $.extend(true, {}, lplugins)
+                    self.data('pluginsLocalChecked', true)
                     callback()
                 },
                 error: function () {
                     store.local = {}
+                    self.data('pluginsLocalChecked', true)
                     callback()
                 },
                 cache: false,
@@ -279,11 +312,11 @@ JqueryClass('patchstorageBox', {
         }
     },
 
-    updatePluginLocalData: function (plugin, callback) {
+    getPluginLocalData: function (plugin, store, callback) {
         var self = $(this)
 
         if ((plugin.bundles && plugin.bundles.length > 0) || !plugin.installedVersion) {
-            self.data('localChecked', true)
+            self.data('pluginLocalChecked', true)
             callback()
             return
         }
@@ -301,27 +334,28 @@ JqueryClass('patchstorageBox', {
                 plugin_version: renderedVersion,
             },
             success: function (data) {
-                plugin = $.extend(data, plugin)
-                self.data('localChecked', true)
-                callback(plugin)
+                store.local = $.extend(true, {}, data)
+                self.data('pluginLocalChecked', true)
+                callback()
             },
             error: function () {
+                store.local = {}
                 // assume not installed
-                plugin.installedVersion = null
-                plugin.installed_version = null
-                self.data('localChecked', true)
-                callback(plugin)
+                store.local.installedVersion = null
+                store.local.installed_version = null
+                self.data('pluginLocalChecked', true)
+                callback()
             },
-            cache: !!plugin.buildEnvironment,
+            cache: false,
             dataType: 'json'
         })
     },
     
-    updatePluginCloudData: function (plugin, callback) {
+    getPluginCloudData: function (plugin, store, callback) {
         var self = $(this)
 
         if (!plugin.psid) {
-            self.data('cloudChecked', true)
+            self.data('pluginCloudChecked', true)
             callback()
             return
         }
@@ -333,22 +367,22 @@ JqueryClass('patchstorageBox', {
             cache: false,
             dataType: 'json',
             success: function (data) {
-                plugin = $.extend(data, plugin)
-                // TODO: what other fields we need to update?
-                plugin.comment = data.content.replace(/&amp;/g, '&')
-                self.data('cloudChecked', true)
-                callback(plugin)
+                store.cloud = $.extend(true, {}, self.patchstorageBox('transformPatch', data))
+                // TODO: what other fields we need?
+                // plugin.comment = data.content
+                self.data('pluginCloudChecked', true)
+                callback()
             },
             error: function () {
-                self.data('cloudChecked', true)
-                callback(plugin)
+                store.cloud = $.extend(true, {}, plugin)
+                self.data('pluginCloudChecked', true)
+                callback()
             }
         });
     },
 
     // search all or installed, depending on selected option
     search: function (customRenderCallback) {
-        console.log('search')
         var self = $(this)
         var query = {
             text: self.data('searchbox').val(),
@@ -357,103 +391,175 @@ JqueryClass('patchstorageBox', {
             bin_compat: BIN_COMPAT,
         }
 
-        if (self.find('input:checkbox[name=installed]:checked').length)
-            return self.patchstorageBox('searchInstalled', query, customRenderCallback)
+        // cleanup
+        // self.data('pluginsData', {})
 
+        // if installed from patchstorage
+        if (self.find('input:checkbox[name=installed]:checked').length)
+            return self.patchstorageBox('searchInstalled', true, query, customRenderCallback)
+
+        // if installed from other source
+        if (self.find('input:checkbox[name=not-available]:checked').length)
+            return self.patchstorageBox('searchInstalled', false, query, customRenderCallback)
+
+        // if not installed from patchstorage
         if (self.find('input:checkbox[name=non-installed]:checked').length)
             return self.patchstorageBox('searchAll', false, query, customRenderCallback)
 
+        // all available plugins
         return self.patchstorageBox('searchAll', true, query, customRenderCallback)
     },
 
     synchronizePluginData: function (plugin) {
-        console.log('synchronizePluginData')
         var index = $(this).data('pluginsData')
-        indexed = index[plugin.uri]
-        if (indexed == null) {
-            indexed = {}
-            index[plugin.uri] = indexed
-        }
-        // Let's store all data safely, while modifying the given object
-        // to have all available data
-        $.extend(indexed, plugin)
-        $.extend(plugin, indexed)
 
         if (window.devicePixelRatio && window.devicePixelRatio >= 2) {
             plugin.thumbnail_href = plugin.thumbnail_href.replace("thumbnail", "screenshot")
         }
+        
+        index[plugin.uri] = plugin
     },
 
     rebuildSearchIndex: function () {
-        console.log('rebuildSearchIndex')
         var plugins = Object.values($(this).data('pluginsData'))
         desktop.resetPluginIndexer(plugins.filter(function (plugin) { return !!plugin.installedVersion }))
     },
 
+    mergePlugins: function (cloud, local) {
+        if (!cloud && !local) {
+            return {}
+        }
+
+        var self = $(this)
+        var plugin = {}
+        // main data priority to cloud
+        // var plugin = $.extend({}, cloud || local)
+        var cplugin = cloud || {}
+        var lplugin = local || {}
+
+        // uri priority to local
+        plugin.uri = lplugin.uri || cplugin.uri
+        plugin.label = lplugin.label || cplugin.label
+        plugin.name = lplugin.name || cplugin.name
+        plugin.comment = lplugin.comment || cplugin.comment
+        plugin.category = lplugin.category || cplugin.category
+        plugin.psid = lplugin.psid || cplugin.psid
+        plugin.author = lplugin.author || cplugin.author
+        plugin.brand = lplugin.brand || cplugin.brand
+        
+        if (!objectEmpty(lplugin)) {
+            plugin.installedVersion = [lplugin.builder || 0, lplugin.minorVersion, lplugin.microVersion, lplugin.release]
+            plugin.status = 'installed'
+            lplugin.latestVersion = null
+
+            if (lplugin.bundles) {
+                plugin.bundles = lplugin.bundles
+            }
+
+            // prefer to show installed modgui screenshot for better recognition
+            if (lplugin.gui) {
+                var uri = escape(lplugin.uri)
+                var ver = [lplugin.builder, lplugin.microVersion, lplugin.minorVersion, lplugin.release].join('_')
+
+                plugin.screenshot_href = "/effect/image/screenshot.png?uri=" + uri + "&v=" + ver
+                plugin.thumbnail_href = "/effect/image/thumbnail.png?uri=" + uri + "&v=" + ver
+            }
+
+            if (lplugin.ports) {
+                plugin.ports = lplugin.ports
+            }
+        
+        } else {
+            plugin.installedVersion = null
+            plugin.status = 'available'
+        }
+
+        if (!objectEmpty(cplugin)) {
+            plugin.files = cplugin.files
+            plugin.latestVersion = cplugin.latestVersion
+            plugin.comment = (plugin.content) ? unescape(plugin.content) : plugin.comment
+        }
+
+        // no media - no problem, take from cloud or default img
+        if (!plugin.screenshot_href) {
+            plugin.screenshot_href = (cplugin && cplugin.screenshot_href) ? cplugin.screenshot_href : "/resources/pedals/default-screenshot.png"
+        }
+        if (!plugin.thumbnail_href) {
+            plugin.thumbnail_href = (cplugin && cplugin.thumbnail_href) ? cplugin.thumbnail_href : "/resources/pedals/default-thumbnail.png"
+        }
+
+        if (plugin.installedVersion && plugin.latestVersion && compareVersions(plugin.latestVersion, plugin.installedVersion) > 0) {
+            plugin.status = 'outdated'
+        }
+
+        consoleLog({'mergePlugins': {'cloud': cloud, 'local': local, 'result': plugin}})
+
+        // TODO: ???
+        self.patchstorageBox('synchronizePluginData', plugin)
+        return plugin
+
+    },
+
+    findPluginInStack: function (stack, uri = null, psid = null) {
+        if (!uri && !psid) {
+            return null
+        }
+        
+        var plugin = null
+
+        if (uri !== null) {
+            plugin = stack[uri]
+        }
+
+        if (!plugin && psid !== null) {
+            for (const uri in stack) {
+                if (stack[uri].psid === psid){
+                    return stack[uri]
+                }
+            }
+        }
+
+        return plugin
+    },
+
     // search cloud and local plugins, prefer cloud
     searchAll: function (showInstalled, query, customRenderCallback) {
-        console.log('searchAll')
         var self = $(this)
-        var results = {
-            local: [],
-            cloud: []
-        }
+        var store = {local: null, cloud: null}
         var cplugin, lplugin = false
 
+        self.data('pluginsLocalChecked', false)
+        self.data('pluginsCloudChecked', false)
+
         renderResults = function () {
-            if (results.local == null || results.cloud == null)
+
+            if (!self.data('pluginsLocalChecked') || !self.data('pluginsCloudChecked'))
                 return
 
             var plugins = []
 
-            for (var i in results.cloud) {
-                cplugin = results.cloud[i]
-                lplugin = results.local[cplugin.uri]
+            for (var i in store.cloud) {                
+                cplugin = store.cloud[i]
+                lplugin = self.patchstorageBox('findPluginInStack', store.local, cplugin.uri, cplugin.psid)
 
-                if (lplugin) {
-                    if (!lplugin.installedVersion) {
-                        console.log("local plugin is missing version info:", lplugin.uri)
-                        lplugin.installedVersion = [0, 0, 0, 0]
-                    }
-
-                    cplugin.installedVersion = lplugin.installedVersion
-                    delete results.local[cplugin.uri]
-
-                    if (compareVersions(cplugin.installedVersion, cplugin.latestVersion) >= 0) {
-                        cplugin.status = 'installed'
-                    } else {
-                        cplugin.status = 'outdated'
-                    }
-
-                    // overwrite build environment if local plugin
-                    cplugin.buildEnvironment = lplugin.buildEnvironment
-
-                    self.patchstorageBox('checkLocalScreenshot', cplugin)
-
-                } else {
-                    cplugin.installedVersion = null // if set to [0, 0, 0, 0], it appears as intalled on cloudplugininfo
-                    cplugin.status = 'available'
+                if (lplugin && !showInstalled) {
+                    continue
                 }
 
-                if (!cplugin.screenshot_available && !cplugin.thumbnail_available) {
-                    if (!cplugin.screenshot_href && !cplugin.thumbnail_href) {
-                        cplugin.screenshot_href = "/resources/pedals/default-screenshot.png"
-                        cplugin.thumbnail_href = "/resources/pedals/default-thumbnail.png"
-                    }
-                }
-                self.patchstorageBox('synchronizePluginData', cplugin)
-                plugins.push(cplugin)
+                plugin = self.patchstorageBox('mergePlugins', cplugin, lplugin)
+                plugins.push(plugin)
             }
 
             // for all the other plugins that are not in the cloud
             if (showInstalled) {
-                for (var uri in results.local) {
-                    lplugin = results.local[uri]
-                    lplugin.status = 'installed'
-                    lplugin.latestVersion = null
-                    self.patchstorageBox('checkLocalScreenshot', lplugin)
-                    self.patchstorageBox('synchronizePluginData', lplugin)
-                    plugins.push(lplugin)
+                for (var uri in store.local) {
+                    lplugin = store.local[uri]
+                    // if psid used as uri, means this local plugin is in cloud.
+                    if (lplugin.psid in store.cloud) {
+                        continue
+                    }
+                    plugin = self.patchstorageBox('mergePlugins', null, lplugin)
+                    plugins.push(plugin)
                 }
             }
 
@@ -466,60 +572,44 @@ JqueryClass('patchstorageBox', {
             self.patchstorageBox('rebuildSearchIndex')
         }
 
-        self.patchstorageBox('getCloudPlugins', query, results, renderResults)
-        self.patchstorageBox('getLocalPlugins', query, results, renderResults)
+        self.patchstorageBox('getCloudPlugins', query, store, renderResults)
+        self.patchstorageBox('getLocalPlugins', query, store, renderResults)
     },
 
     // search cloud and local plugins, show installed only
-    searchInstalled: function (query, customRenderCallback) {
-        console.log('searchInstalled')
+    searchInstalled: function (fromPatchstorage, query, customRenderCallback) {
         var self = $(this)
-        var results = {
-            store: [],
-            cloud: []
+        var store = {
+            local: null,
+            cloud: null
         }
         var cplugin, lplugin = false
 
+        self.data('pluginsLocalChecked', false)
+        self.data('pluginsCloudChecked', false)
+
         renderResults = function () {
+            if (!self.data('pluginsLocalChecked') || !self.data('pluginsCloudChecked'))
+                return
+
             var plugins = []
-
-            for (var i in results.local) {
-                lplugin = results.local[i]
-                cplugin = results.cloud[lplugin.uri]
-
-                if (!lplugin.installedVersion) {
-                    console.log("local plugin is missing version info:", lplugin.uri)
-                    lplugin.installedVersion = [0, 0, 0, 0]
+            
+            for (var i in store.local) {
+                lplugin = store.local[i]
+                
+                // if ps only, don't show plugins without psid
+                if (fromPatchstorage && !lplugin.psid) {
+                    continue
                 }
 
-                if (cplugin) {
-                    lplugin.stable = cplugin.stable
-                    lplugin.latestVersion = cplugin.latestVersion
-
-                    if (compareVersions(lplugin.installedVersion, lplugin.latestVersion) >= 0) {
-                        lplugin.status = 'installed'
-                    } else {
-                        lplugin.status = 'outdated'
-                    }
-
-                } else {
-                    lplugin.latestVersion = null
-                    lplugin.status = 'installed'
+                // if non ps, don't show plugins with psid
+                if (!fromPatchstorage && lplugin.psid) {
+                    continue
                 }
 
-                // we're showing installed only, so prefer to show installed modgui screenshot
-                if (lplugin.gui) {
-                    var uri = escape(lplugin.uri)
-                    var ver = [lplugin.builder, lplugin.microVersion, lplugin.minorVersion, lplugin.release].join('_')
-
-                    lplugin.screenshot_href = "/effect/image/screenshot.png?uri=" + uri + "&v=" + ver
-                    lplugin.thumbnail_href = "/effect/image/thumbnail.png?uri=" + uri + "&v=" + ver
-                } else {
-                    lplugin.screenshot_href = "/resources/pedals/default-screenshot.png"
-                    lplugin.thumbnail_href = "/resources/pedals/default-thumbnail.png"
-                }
-                self.patchstorageBox('synchronizePluginData', lplugin)
-                plugins.push(lplugin)
+                cplugin = self.patchstorageBox('findPluginInStack', store.cloud, null, lplugin.psid)
+                plugin = self.patchstorageBox('mergePlugins', cplugin, lplugin)
+                plugins.push(plugin)
             }
 
             if (customRenderCallback) {
@@ -531,22 +621,13 @@ JqueryClass('patchstorageBox', {
             self.patchstorageBox('rebuildSearchIndex')
         }
 
-        preparePlugins = function() {
-            var plugins = results.cloud
-            var cplugins = {}
-            for (var i in plugins) {
-                delete plugins[i].installedVersion
-                delete plugins[i].bundles
-                cplugins[plugins[i].uri] = plugins[i]
-            }
-            results.cloud = cplugins
-            if (results.local != null)
-                renderResults()
+        // if not ps, don't reach cloud
+        if (!fromPatchstorage) {
+            self.data('pluginsCloudChecked', true)
+        } else {
+            self.patchstorageBox('getCloudPlugins', query, store, renderResults)
         }
-
-        // TODO: fix callback
-        self.patchstorageBox('getCloudPlugins', query, results, preparePlugins)
-        self.patchstorageBox('getLocalPlugins', query, results, renderResults)
+        self.patchstorageBox('getLocalPlugins', query, store, renderResults)
     },
 
     showPlugins: function (plugins) {
@@ -586,7 +667,6 @@ JqueryClass('patchstorageBox', {
         var cachedContentCanvas = {
             'All': self.find('#patch-content-All')
         }
-        var pluginsDict = {}
 
         var getCategory = function (plugin) {
             category = plugin.category[0]
@@ -614,8 +694,6 @@ JqueryClass('patchstorageBox', {
             category = getCategory(plugin)
             render = self.patchstorageBox('renderPlugin', plugin)
 
-            pluginsDict[plugin.uri] = plugin
-
             if (category && category != 'All' && categories[category] != null) {
                 categories[category] += 1
                 if (cachedContentCanvas[category] == null) {
@@ -626,8 +704,6 @@ JqueryClass('patchstorageBox', {
 
             render.appendTo(cachedContentCanvas['All'])
         }
-
-        self.data('pluginsDict', pluginsDict)
 
         // display plugin count
         self.patchstorageBox('setCategoryCount', categories)
@@ -660,7 +736,7 @@ JqueryClass('patchstorageBox', {
         var template = TEMPLATES.cloudplugin
         var rendered = $(Mustache.render(template, data))
         rendered.click(function () {
-            self.patchstorageBox('showPluginInfo', plugin.uri)
+            self.patchstorageBox('showPluginInfo', plugin.uri, plugin.psid)
         })
 
         return rendered
@@ -804,7 +880,7 @@ JqueryClass('patchstorageBox', {
         var basic = {
             uri: plugin.uri,
             escaped_uri: escape(plugin.uri),
-            comment: plugin.comment.trim() || "No description available",
+            comment: (plugin.comment) ? plugin.comment.trim() : "No description available",
             has_comment: (plugin.comment) ? null : "no_description",
             author: plugin.author,
             screenshot_href: plugin.screenshot_href,
@@ -815,7 +891,6 @@ JqueryClass('patchstorageBox', {
         }
 
         if (full === false) {
-            console.log(basic)
             return basic
         }
         
@@ -868,18 +943,26 @@ JqueryClass('patchstorageBox', {
     },
 
     // OK
-    showPluginInfo: function (uri) {
+    showPluginInfo: function (uri, psid) {
+        consoleLog('showPluginInfo')
         var self = $(this)
-        var plugin = self.data('pluginsData')[uri]
+        var plugin = self.patchstorageBox('findPluginInStack', self.data('pluginsData'), uri, psid)
+        var result = {
+            local: null,
+            cloud: null
+        }
+
+        var cache = self.data('pluginsData')
         
-        self.data('cloudChecked', false)
-        self.data('localChecked', false)
+        self.data('pluginCloudChecked', false)
+        self.data('pluginLocalChecked', false)
 
-        var showInfo = function (plugin) {
-
-            if (!self.data('localChecked') || !self.data('cloudChecked'))
+        var showInfo = function () {
+            if (!self.data('pluginLocalChecked') || !self.data('pluginCloudChecked'))
                 return
             
+            var plugin = self.patchstorageBox('mergePlugins', result.cloud, result.local)
+
             // cleanup
             self.data('info', null)
 
@@ -898,8 +981,8 @@ JqueryClass('patchstorageBox', {
                         var bundlename = plugin.bundles[0].split('/').filter(function (el) { return el.length != 0 }).pop(0)
                         self.patchstorageBox('postInstallAction', [], resp.removed, bundlename)
                         info.window('close')
-
                         // remove-only action, need to manually update plugins
+                        // TODO: investigate
                         desktop.updatePluginList([], resp.removed)
                         // HACK: need a better solution for reloading state
                         self.patchstorageBox('search')
@@ -920,9 +1003,11 @@ JqueryClass('patchstorageBox', {
             if (plugin.installedVersion && plugin.latestVersion && compareVersions(plugin.latestVersion, plugin.installedVersion) > 0) {
                 info.find('.js-upgrade').show().click(function () {
                     // Upgrade plugin
-                    self.data('upgradePluginURI')(plugin.uri, false, function (resp, bundlename) {
+                    self.patchstorageBox('installPlugin', plugin, function (resp, bundlename) {
                         self.patchstorageBox('postInstallAction', resp.installed, resp.removed, bundlename)
                         info.window('close')
+                        // HACK: need a better solution for reloading state
+                        self.patchstorageBox('search')
                     })
                 })
             } else {
@@ -938,7 +1023,7 @@ JqueryClass('patchstorageBox', {
             self.data('info', info)
         }
 
-        self.patchstorageBox('updatePluginLocalData', plugin, showInfo)
-        self.patchstorageBox('updatePluginCloudData', plugin, showInfo)
+        self.patchstorageBox('getPluginLocalData', plugin, result, showInfo)
+        self.patchstorageBox('getPluginCloudData', plugin, result, showInfo)
     }
 })
