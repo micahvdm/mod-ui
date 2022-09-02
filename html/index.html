@@ -61,9 +61,11 @@
     var TEMPLATES = {}
     SITEURL = '{{cloud_url}}'
     CLOUD_LABS_URL = '{{cloud_labs_url}}'
+    UNMODIFY = '{{unmodify}}'
     // HACK:
-    // PATCHSTORAGE_API_URL = 'https://patchstorage.com/api/alpha/patches'
+    PATCHSTORAGE_API_URL = 'https://patchstorage.com/api/alpha/patches'
     PATCHSTORAGE_API_URL = 'http://localhost/api/beta/patches'
+    PATCHSTORAGE_PLATFORM_ID = 662
     PATCHSTORAGE_PLATFORM_ID = 5027
     PLUGINS_URL      = '{{plugins_url}}'
     PEDALBOARDS_URL  = '{{pedalboards_url}}'
@@ -190,10 +192,11 @@ $('document').ready(function() {
         // hide stuff that is only relevant to MOD Devices
         $('#mod-bypassLeft').hide()
         $('#mod-bypassRight').hide()
-        $('#mod-cloud-plugins').hide()
         $('#mod-update').hide()
         $('#pedalboard-info').find('.js-cloud').hide()
             $('#patchstorage').hide()
+        } else {
+            $('#mod-cloud-plugins').hide()
         }
 
         // show other stuff to make it less empty
@@ -837,9 +840,9 @@ $('document').ready(function() {
                 </div>
                 <div class="control-group">
                     <input type="checkbox" name="not-available" id="patchstorage-not-available" />
-                    <label for="patchstorage-not-available">OTHER LOCAL</label>
+                    <label for="patchstorage-not-available">OTHER PLUGINS</label>
                 </div>
-                <ul class="categories list list-unstyled">
+                <ul class="categories list list-unstyled" style="margin-bottom: 0px;">
                     <li id="patchstorage-tab-All">All</li>
                     <li id="patchstorage-tab-ControlVoltage">Control&nbsp;Voltage</li>
                     <li id="patchstorage-tab-Delay">Delay</li>
@@ -857,7 +860,7 @@ $('document').ready(function() {
                     <!-- <li id="patchstorage-tab-MaxGen">Max&nbsp;gen~</li> -->
                     <!-- <li id="patchstorage-tab-Camomile">Camomile</li> -->
                 </ul>
-                <div class="form-group">
+                <div class="form-group mod-hidden">
                     <input class="form-control" placeholder="Filter by keyword(s)" type="search" autocomplete="off" />
                 </div>
             </div>
