@@ -1,0 +1,157 @@
+<div class="js-close patchstorage-info plugin-container" mod-uri="{{escaped_uri}}">
+    <div class="container box">
+        <div class="row-fluid clearfix">
+          <span class="js-close alignright btn btn-mini btn-danger">Close</span>
+            <div class="span10 offset1 clearfix">
+                <figure class="screenshot">
+                    {{#state}}
+                    <div class="state {{state}}" title="{{state}}"></div>
+                    {{/state}}
+                    <img src="{{screenshot_href}}">
+                </figure>
+
+                <div class="plugin-description">
+                    <header>
+                      <h1 class="text-uppercase">{{name}}</h1>
+                        {{#ps_local_version}}
+                        <a class="favorite-button {{favorite_class}}" title="Favorite Plugin"></a>
+                        {{/ps_local_version}}
+                        <br/>
+                        <p>
+                            {{#category}}
+                            <b>Category:</b> {{category}}<br/>
+                            {{/category}}
+                            {{#tags}}
+                            <b>Tags:</b> {{tags}}<br/>
+                            {{/tags}}
+                        </p>
+                        {{#author.name}}
+                        <p>
+                            <b>Author:</b> {{author.name}}<br/>
+                            {{#author.homepage}}
+                            <b>Homepage:</b> <a href="{{author.homepage}}" target="_blank">{{author.homepage}}</a><br/>
+                            {{/author.homepage}}
+                        </p>
+                        {{/author.name}}
+                        {{#uploader}}
+                        <p>
+                            <b>Uploaded by:</b> @{{uploader.name}}<br/>
+                            {{#link}}
+                            <b>Link:</b> <a href="{{link}}" target="_blank">{{link}}</a><br/>
+                            {{/link}}
+                        </p>
+                        {{/uploader}}
+                        <p class="version">
+                            {{#plugin_version}}
+                            <span>
+                                Plugin Build Version: <span class="bold">{{plugin_version}}</span><br/>
+                            </span>
+                            {{/plugin_version}}
+                            {{#download_count}}
+                            <span>
+                                <span class="ps-label">P</span> Downloads: <span class="bold">{{download_count}}</span><br/>
+                            </span>
+                            {{/download_count}}
+                            {{#ps_cloud_version}}
+                            <span class="js-latest-version">
+                                <span class="ps-label">P</span> Latest Revision: <span class="bold">{{ps_cloud_version}}</span><br/>
+                            </span>
+                            {{/ps_cloud_version}}
+                            {{#ps_local_version}}
+                            <span class="js-installed-version">
+                                <span class="ps-label">P</span> Installed Revision: <span class="bold">{{ps_local_version}}</span><br/>
+                            </span>
+                            {{/ps_local_version}}
+                            <table><tr><td>
+                            <button class="js-install btn btn-info btn-mini">Install</button>
+                            <button class="js-upgrade btn btn-info btn-mini">Update</button>
+                            <button class="js-remove btn btn-danger btn-mini">Remove</button>
+                            </td>
+                            </tr></table>
+                        </p>
+                    </header>
+                    <p>{{comment}}</p>
+                    {{#pedalboard_href}}
+                    <a target="_blank" href="{{pedalboard_href}}" class="btn btn-info online-button-href">
+                        <span>See it in action</span>
+                    </a>
+                    {{/pedalboard_href}}
+                    {{#link}}
+                    <a target="_blank" href="{{link}}" class="btn btn-info online-button-href">
+                        <span>See on Patchstorage</span>
+                    </a>
+                    {{/link}}
+                    {{#documentation_href}}
+                    <a target="_blank" href="{{documentation_href}}" class="btn btn-info online-button-href">
+                        <span>See documentation</span>
+                    </a>
+                    {{/documentation_href}}
+                    {{#ports}}
+                    {{#ports.control}}
+                    <div class="plugin-controlports">
+                        <p><strong>CONTROL PORTS:</strong></p>
+                        <table class="plugin-specs table table-bordered">
+                        <tr>
+                            <th>Control</th>
+                            <th>Default</th>
+                            <th>Min</th>
+                            <th>Max</th>
+                        </tr>
+                        {{#ports.control.input}}
+                        <tr>
+                            <td>{{shortName}}</td>
+                            <td>{{formatted.default}}</td>
+                            <td>{{formatted.minimum}}</td>
+                            <td>{{formatted.maximum}}</td>
+                        </tr>
+                        {{/ports.control.input}}
+                        </table>
+                    </div>
+                    {{/ports.control}}
+                    {{#ports.cv}}
+                    {{#ports.cv.input}}
+                    <div class="plugin-cvinputs">
+                        <p><strong>CV INPUTS:</strong></p>
+                        <table class="plugin-specs table table-bordered">
+                        <tr>
+                            <th>Port</th>
+                            <th>Default</th>
+                            <th>Min</th>
+                            <th>Max</th>
+                        </tr>
+                        
+                        <tr>
+                            <td>{{shortName}}</td>
+                            <td>{{formatted.default}}</td>
+                            <td>{{formatted.minimum}}</td>
+                            <td>{{formatted.maximum}}</td>
+                        </tr>
+                        </table>
+                    </div>
+                    {{/ports.cv.input}}
+                    {{#ports.cv.output}}
+                    <div class="plugin-cvoutputs">
+                        <p><strong>CV OUTPUTS:</strong></p>
+                        <table class="plugin-specs table table-bordered">
+                        <tr>
+                            <th>Port</th>
+                            <th>Default</th>
+                            <th>Min</th>
+                            <th>Max</th>
+                        </tr>
+                        <tr>
+                            <td>{{shortName}}</td>
+                            <td>{{formatted.default}}</td>
+                            <td>{{formatted.minimum}}</td>
+                            <td>{{formatted.maximum}}</td>
+                        </tr>
+                        </table>
+                    </div>
+                    {{/ports.cv.output}}
+                    {{/ports.cv}}
+                    {{/ports}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

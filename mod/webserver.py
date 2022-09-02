@@ -37,7 +37,7 @@ from mod.settings import (APP, LOG, DEV_API,
                           DEFAULT_PEDALBOARD, DEFAULT_SNAPSHOT_NAME, DATA_DIR, KEYS_PATH, USER_FILES_DIR,
                           FAVORITES_JSON_FILE, PREFERENCES_JSON_FILE, USER_ID_JSON_FILE,
                           DEV_HOST, UNTITLED_PEDALBOARD_NAME, MODEL_CPU, MODEL_TYPE, PEDALBOARDS_LABS_HTTP_ADDRESS,
-                          PATCHSTORAGE_ENABLED)
+                          PATCHSTORAGE_ENABLED, UMODIFY)
 
 from mod import (
     TextFileFlusher,
@@ -182,17 +182,23 @@ def install_package(filename, options, callback):
         return
 
     def end_untar_pkgs(resp):
-        bundlenames = None
+        bundlenames = []
         psid = options.get("psid")
 
         if psid is not None:
-            with tarfile.open(filename) as f:
-                bundlenames = f.getnames()
-            
+            psversion = options.get("psversion", "0.0")
+            config = "ID={}\nVERSION={}\n".format(psid, psversion)
+
+            try:
+                with tarfile.open(filename) as f:
+                    bundlenames = f.getnames()
+            except tarfile.ReadError as e:
+                logging.warning(f'tar file read error: {str(e)}')
+
             for name in bundlenames:
                 if not any(s in name for s in ["/", "\\"]) and os.path.isdir(os.path.join(DOWNLOAD_TMP_DIR, name)):            
-                    with open(os.path.join(DOWNLOAD_TMP_DIR, name, f"psid"), 'w') as f:
-                        f.write(psid + '\n')
+                    with open(os.path.join(DOWNLOAD_TMP_DIR, name, "patchstorage"), 'w') as f:
+                        f.write(config)
 
         os.remove(filename)
         install_bundles_in_tmp_dir(options, callback)
@@ -752,8 +758,12 @@ class EffectInstaller(SimpleFileReceiver):
         
         # TODO: remove this, once a better solution is found
         psids = self.request.headers.get_list("Patchstorage-Item")
-        if len(psids) > 0:
+        if psids and len(psids) > 0:
             options["psid"] = psids[0]
+
+        psvers = self.request.headers.get_list("Patchstorage-Item-Version")
+        if psvers and len(psvers) > 0:
+            options["psversion"] = psvers[0]
 
         def on_finish(resp):
             reset_get_all_pedalboards_cache(kPedalboardInfoBoth)
@@ -1800,7 +1810,8 @@ class TemplateHandler(TimelessRequestHandler):
             'preferences': json.dumps(SESSION.prefs.prefs),
             'bufferSize': get_jack_buffer_size(),
             'sampleRate': get_jack_sample_rate(),
-            'patchstorage_enabled': 'true' if PATCHSTORAGE_ENABLED else 'false'
+            'patchstorage_enabled': 'true' if PATCHSTORAGE_ENABLED else 'false',
+            'unmodify': 'true' if UNMODIFY else 'false'
         }
         return context
 

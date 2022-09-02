@@ -113,7 +113,6 @@ function SimpleTransference(from, to, options) {
     }
 
     this.upload = function (file) {
-        console.log(file)
         self.reauthorizedDownload = false
         var req = $.ajax($.extend({
             method: 'POST',
