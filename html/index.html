@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html class="{% if blokas_enabled %}blokas{% end %}">
 
 <!-- HEAD -->
 <head>
 <meta charset="UTF-8">
-<title>MOD</title>
+<title>{% if blokas_enabled %}Pedalboard{% else %}MOD{% end %}</title>
 
+{% if blokas_enabled %}
+<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+{% else %}
 <link rel="apple-touch-icon" sizes="57x57" href="img/favicon/apple-icon-57x57.png">
 <link rel="apple-touch-icon" sizes="60x60" href="img/favicon/apple-icon-60x60.png">
 <link rel="apple-touch-icon" sizes="72x72" href="img/favicon/apple-icon-72x72.png">
@@ -20,8 +23,9 @@
 <link rel="icon" type="image/png" sizes="96x96" href="img/favicon/favicon-96x96.png">
 <link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
 <link rel="manifest" href="img/favicon/manifest.json">
-<meta name="msapplication-TileColor" content="#111111">
 <meta name="msapplication-TileImage" content="img/favicon/ms-icon-144x144.png">
+{% end %}
+<meta name="msapplication-TileColor" content="#111111">
 <meta name="theme-color" content="#111111">
 
 <link rel="stylesheet" type="text/css" href="css/fontello/css/fontello.css?v={{version}}"/>
@@ -61,11 +65,12 @@
     var TEMPLATES = {}
     SITEURL = '{{cloud_url}}'
     CLOUD_LABS_URL = '{{cloud_labs_url}}'
-    UNMODIFY = '{{unmodify}}'
-    // HACK:
+    PATCHSTORAGE_ENABLED = '{{patchstorage_enabled}}'
     PATCHSTORAGE_API_URL = 'https://patchstorage.com/api/alpha/patches'
-    PATCHSTORAGE_API_URL = 'http://localhost/api/beta/patches'
     PATCHSTORAGE_PLATFORM_ID = 662
+    BLOKAS_ENABLED = '{{blokas_enabled}}'
+    // TODO:
+    PATCHSTORAGE_API_URL = 'http://localhost/api/beta/patches'
     PATCHSTORAGE_PLATFORM_ID = 5027
     PLUGINS_URL      = '{{plugins_url}}'
     PEDALBOARDS_URL  = '{{pedalboards_url}}'
@@ -187,24 +192,38 @@ $('document').ready(function() {
     } else {
         desktop.upgradeWindow.upgradeWindow('setErrored')
 
-        // HACK:
-        if (!{{patchstorage_enabled}}) {
-        // hide stuff that is only relevant to MOD Devices
         $('#mod-bypassLeft').hide()
         $('#mod-bypassRight').hide()
         $('#mod-update').hide()
         $('#pedalboard-info').find('.js-cloud').hide()
-            $('#patchstorage').hide()
-        } else {
-            $('#mod-cloud-plugins').hide()
-        }
 
         // show other stuff to make it less empty
         $('#mod-xruns').show()
         $('#mod-status').show().statusTooltip('updatePosition')
     }
 
+    if ({{blokas_enabled}}) {
+        $('#mod-devices').hide()
+        $('#mod-online-pedalboards').hide()
+        $('#mod-cloud-plugins').hide()
+        $('#mod-settings').hide()
+        $('#mod-status').hide()
+
+        // disable all calls to domain moddevices.com
+        $(document).ajaxSend(function (event, xhr, options) {
+            if (options.url && !options.url.startsWith('/') && xhr.abort) {
+                var domain = (new URL(options.url)).hostname
+                if (domain.includes('moddevices.com')) xhr.abort()
+            }
+        })
+    }
+
+    if (!{{patchstorage_enabled}}) {
+        $('#patchstorage').hide()
+    }
+
     if (PREFERENCES['dev-mode'] == "on") {
+        console.log('DEV Mode Enabled')
         enable_dev_mode(true)
     }
     if (PREFERENCES['plugins-folded'] == "true") {
@@ -901,7 +920,7 @@ $('document').ready(function() {
                 <div class="form-group">
                     <input id="searchPedalboard" class="form-control" maxlength="20" placeholder="Filter by keyword(s)" type="search" autocomplete="off" />
                 </div>
-                <a style="display:inline-block;float:right;color:#AAA;font-size:1.1em;margin-right:30px;"
+                <a id="mod-online-pedalboards" style="display:inline-block;float:right;color:#AAA;font-size:1.1em;margin-right:30px;"
                    href="http://pedalboards.moddevices.com/" target="_blank">
                     <img style="width: 1.2em; height: 1.2em; opacity: 0.6; vertical-align: middle;" src="img/icons/25/language.png" alt=""/>
                     <span style="vertical-align: middle;">Browse Online Pedalboards</span>
