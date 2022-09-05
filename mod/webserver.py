@@ -49,7 +49,7 @@ from mod.settings import (APP, LOG, DEV_API,
                           DEFAULT_PEDALBOARD, DEFAULT_SNAPSHOT_NAME, DATA_DIR, KEYS_PATH, USER_FILES_DIR,
                           FAVORITES_JSON_FILE, PREFERENCES_JSON_FILE, USER_ID_JSON_FILE,
                           DEV_HOST, UNTITLED_PEDALBOARD_NAME, MODEL_CPU, MODEL_TYPE, PEDALBOARDS_LABS_HTTP_ADDRESS,
-                          PATCHSTORAGE_ENABLED, UMODIFY)
+                          PATCHSTORAGE_ENABLED, BLOKAS_ENABLED)
 
 from mod import check_environment, jsoncall, safe_json_load, TextFileFlusher, get_hardware_descriptor
 from mod.bank import list_banks, save_banks, remove_pedalboard_from_banks
@@ -1787,7 +1787,7 @@ class TemplateHandler(TimelessRequestHandler):
             'bufferSize': get_jack_buffer_size(),
             'sampleRate': get_jack_sample_rate(),
             'patchstorage_enabled': 'true' if PATCHSTORAGE_ENABLED else 'false',
-            'unmodify': 'true' if UNMODIFY else 'false'
+            'blokas_enabled': 'true' if BLOKAS_ENABLED else 'false'
         }
         return context
 
@@ -1839,6 +1839,7 @@ class TemplateHandler(TimelessRequestHandler):
             'preferences': json.dumps(prefs),
             'bufferSize': get_jack_buffer_size(),
             'sampleRate': get_jack_sample_rate(),
+            'blokas_enabled': 'true' if BLOKAS_ENABLED else 'false'
         }
         return context
 

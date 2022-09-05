@@ -131,29 +131,61 @@ JqueryClass('patchstorageBox', {
         });
     },
 
-    // TODO: merge with mergePluginData
-    // patchstorage patch obj to plugin
+    // TODO: merge with mergePluginData?
     transformPatch: function (patch) {
         patch.psid = patch.id.toString()
-        patch.ps_cloud_version = (patch.revision) ? patch.revision : "0.0"
         patch.uri = patch.id.toString()
-        // TODO: replace replace - find a better safe solution
-        patch.name = patch.title.replace(/&amp;/g, '&')
-        patch.label = patch.title.replace(/&amp;/g, '&')
-        patch.comment = (patch.content) ? patch.content.replace(/&amp;/g, '&') : patch.excerpt.replace(/&amp;/g, '&')
-        patch.brand = patch.author.name.replace(/&amp;/g, '&')
+        patch.ps_cloud_version = (patch.revision) ? patch.revision : "0.0" // ensure we have a revision
+        patch.name = unescape(patch.title)
+        patch.label = unescape(patch.title)
+        patch.comment = (patch.content) ? unescape(patch.content) : unescape(patch.excerpt)
         patch.thumbnail_href = patch.artwork.url
         patch.screenshot_href = patch.artwork.url
-        patch.category = patch.categories.map((cat) => {
-            return cat.name
+
+        var tags = []
+
+        patch.categories.forEach(function(item) {
+            var name = item.slug.replace('-', '').toLowerCase()
+            if (!tags.includes(name)) tags.push(name)
         })
-        patch.tags = patch.tags.map((tag) => {
-            return tag.name
+
+        patch.tags.forEach(function(item) {
+            var name = item.slug.replace('-', '').toLowerCase()
+            if (!tags.includes(name)) tags.push(name)
         })
-        patch.tags = (patch.tags && patch.tags.length > 0) ? patch.tags.join(', ') : null
+
+        var getCategoryFromTags = function (tags) {
+            var map = {
+                'delay': 'Delay',
+                'distortion': 'Distortion',
+                'dynamics': 'Dynamics',
+                'filter': 'Filter',
+                'generator': 'Generator',
+                'modulator': 'Modulator',
+                'reverb': 'Reverb',
+                'simulator': 'Simulator',
+                'spatial': 'Spatial',
+                'spectral': 'Spectral',
+                'controlvoltage': 'ControlVoltage',
+                'midi': 'MIDI',
+                'utility': 'Utility'
+            }
+
+            for (var k in map) {
+                if (tags.includes(k)) {
+                    return [map[k],]
+                }
+            }
+
+            return ['Other',]
+        }
+
+        patch.category = getCategoryFromTags(tags)
+        patch.tags = tags.join(', ')
 
         delete patch.id
         delete patch.artwork
+        delete patch.content
         delete patch.categories
         delete patch.code
         delete patch.comment_count
@@ -180,6 +212,7 @@ JqueryClass('patchstorageBox', {
         return patches
     },
 
+    // TODO: single vs list flag needed?
     mergePluginData: function (cloud, local) {
         if (!cloud && !local) {
             return {}
@@ -192,8 +225,7 @@ JqueryClass('patchstorageBox', {
         var existsLocal = !objectEmpty(lplugin)
         var plugin = {}
 
-        // var schema = {
-        //     // local API
+        // var schema_full = {
         //     author: {
         //         name: null, // str
         //         homepage: null, // url
@@ -201,8 +233,8 @@ JqueryClass('patchstorageBox', {
         //     },
         //     binary: null, // *.so file path
         //     brand: null, // used in list view as author
-        //     buildEnvironment: null, // TODO: investigate
-        //     builder: null, // TODO: investigate
+        //     buildEnvironment: null, // investigate
+        //     builder: null, // investigate
         //     bundles: null, // [str,] used for remove, etc.
         //     category: null, // [str,]
         //     comment: null, // main info str field
@@ -216,7 +248,7 @@ JqueryClass('patchstorageBox', {
         //     parameters: null, // []
         //     ports: null, // {} ports object
         //     presets: null, // [] presets list
-        //     release: null, // TODO: investigate (int bool?)
+        //     release: null, // investigate (int bool?)
         //     stability: null, // str (e.g. testing)
         //     uri: null, // lv2 unique id
         //     valid: null, // bool
@@ -228,11 +260,11 @@ JqueryClass('patchstorageBox', {
         plugin.label = lplugin.label || cplugin.label
         plugin.name = cplugin.name || lplugin.name 
         plugin.comment = cplugin.comment || lplugin.comment 
-        plugin.category = lplugin.category || cplugin.category
+        plugin.category = (Array.isArray(lplugin.category) && lplugin.category.length) ? lplugin.category : cplugin.category
         plugin.tags = cplugin.tags
+        plugin.author = lplugin.author
         plugin.psid = lplugin.psid || cplugin.psid
-        plugin.author = lplugin.author || cplugin.author
-        plugin.brand = lplugin.brand || cplugin.brand
+        plugin.brand = lplugin.brand
         plugin.download_count = cplugin.download_count
         plugin.uploader = cplugin.uploader
         plugin.ps_local_version = lplugin.ps_local_version
@@ -262,14 +294,13 @@ JqueryClass('patchstorageBox', {
             if (!existsCloud && lplugin.psid) {
                 plugin.status = 'unavailable'
             }
-        
         }
 
         if (existsCloud) {
             plugin.uploader = cplugin.author
             plugin.files = cplugin.files
-            plugin.comment = (plugin.content) ? unescape(plugin.content) : plugin.comment
             plugin.state = cplugin.state.slug
+            plugin.brand = `🡅 ${cplugin.author.slug}`
         }
 
         // no media - no problem, take from cloud or default img
@@ -282,6 +313,10 @@ JqueryClass('patchstorageBox', {
 
         if (plugin.ps_local_version && plugin.ps_cloud_version && plugin.ps_cloud_version != plugin.ps_local_version) {
             plugin.status = 'outdated'
+        }
+
+        if (plugin.category.length == 2 && plugin.category[0] == 'Utility' && plugin.category[1] == 'MIDI') {
+            plugin.category = ['MIDI',]
         }
 
         self.patchstorageBox('synchronizePluginData', plugin)
@@ -346,55 +381,34 @@ JqueryClass('patchstorageBox', {
         // ensure store local is ready
         store.local = {}
         
-        // TODO: fix indexer vs api
-        if (query.text) {
-            var lplugins = {}
-
-            var ret = desktop.pluginIndexer.search(query.text)
-            for (var i in ret) {
-                var uri = ret[i].ref
-                var pluginData = self.data('pluginsData')[uri]
-                if (!pluginData) {
-                    console.log("ERROR: Plugin '" + uri + "' was not previously cached, cannot show it")
-                    continue
-                }
-                lplugins[uri] = pluginData
-            }
-
-            store.local = $.extend(true, {}, lplugins)
-            self.data('pluginsLocalChecked', true)
-            callback()
-        }
-        else {
-            var xhr = $.ajax({
-                method: 'GET',
-                url: '/effect/list',
-                success: function (plugins) {
-                    var lplugins = {}
-                    for (var i in plugins) {
-                        var plugin = plugins[i]
-                        if (plugin && plugin.patchstorage) {
-                            plugin.psid = plugin.patchstorage.id
-                            plugin.ps_local_version = plugin.patchstorage.version
-                        }
-                        lplugins[plugin.uri] = plugin
+        var xhr = $.ajax({
+            method: 'GET',
+            url: '/effect/list',
+            success: function (plugins) {
+                var lplugins = {}
+                for (var i in plugins) {
+                    var plugin = plugins[i]
+                    if (plugin && plugin.patchstorage) {
+                        plugin.psid = plugin.patchstorage.id
+                        plugin.ps_local_version = plugin.patchstorage.version
                     }
+                    lplugins[plugin.uri] = plugin
+                }
 
-                    store.local = $.extend(true, {}, lplugins)
-                    self.data('pluginsLocalChecked', true)
-                    callback()
-                },
-                error: function (xhr, status) {
-                    if (status == 'abort') return
-                    store.local = {}
-                    self.data('pluginsLocalChecked', true)
-                    callback()
-                },
-                cache: false,
-                dataType: 'json'
-            })
-            self.data('xhrs').push(xhr)
-        }
+                store.local = $.extend(true, {}, lplugins)
+                self.data('pluginsLocalChecked', true)
+                callback()
+            },
+            error: function (xhr, status) {
+                if (status == 'abort') return
+                store.local = {}
+                self.data('pluginsLocalChecked', true)
+                callback()
+            },
+            cache: false,
+            dataType: 'json'
+        })
+        self.data('xhrs').push(xhr)
     },
 
     getPluginLocalData: function (uri, psid, store, callback) {
@@ -467,7 +481,6 @@ JqueryClass('patchstorageBox', {
         self.data('xhrs').push(xhr)
     },
 
-    // TODO: needed?
     synchronizePluginData: function (plugin) {
         var index = $(this).data('pluginsData')
 
@@ -478,7 +491,7 @@ JqueryClass('patchstorageBox', {
         index[plugin.uri] = plugin
     },
 
-    // TODO: investigate
+    // TODO: investigate desktop.indexer
     rebuildSearchIndex: function () {
         var plugins = Object.values($(this).data('pluginsData'))
         desktop.resetPluginIndexer(plugins.filter(function (plugin) { return !!plugin.ps_installed_version }))
@@ -682,18 +695,10 @@ JqueryClass('patchstorageBox', {
             'Simulator': 0,
             'Spatial': 0,
             'Spectral': 0,
-            'Utility': 0,
+            'Utility': 0
         }
         var cachedContentCanvas = {
             'All': self.find('#patch-content-All')
-        }
-
-        var getCategory = function (plugin) {
-            category = plugin.category[0]
-            if (category == 'Utility' && plugin.category.length == 2 && plugin.category[1] == 'MIDI') {
-                return 'MIDI';
-            }
-            return category
         }
 
         var plugin, render
@@ -711,7 +716,7 @@ JqueryClass('patchstorageBox', {
 
         for (var i in plugins) {
             plugin = plugins[i]
-            category = getCategory(plugin)
+            category = plugin.category[0]
             render = self.patchstorageBox('renderPlugin', plugin)
 
             if (category && category != 'All' && categories[category] != null) {
@@ -821,29 +826,29 @@ JqueryClass('patchstorageBox', {
         trans.start()
     },
 
-    // TODO: needs some work
+    // TODO: needs some work together with showPluginInfo for better state reloading
     postInstallAction: function (installed, removed, bundlename) {
         var self = $(this)
-        var bundle = LV2_PLUGIN_DIR + bundlename
-        var category, categories = self.data('categoryCount')
+        // var bundle = LV2_PLUGIN_DIR + bundlename
+        // var category, categories = self.data('categoryCount')
         var uri, plugin, oldElem, newElem
 
-        for (var i in installed) {
-            uri = installed[i]
-            plugin = self.data('pluginsData')[uri]
+        // for (var i in installed) {
+        //     uri = installed[i]
+        //     plugin = self.data('pluginsData')[uri]
 
-            if (!plugin) {
-                continue
-            }
+        //     if (!plugin) {
+        //         continue
+        //     }
 
-            plugin.status = 'installed'
-            plugin.bundles = [bundle]
-            plugin.ps_local_version = plugin.ps_cloud_version
+        //     plugin.status = 'installed'
+        //     plugin.bundles = [bundle]
+        //     plugin.ps_local_version = plugin.ps_cloud_version
 
-            oldElem = self.find('.cloud-plugin[mod-uri="' + escape(uri) + '"]')
-            newElem = self.patchstorageBox('renderPlugin', plugin)
-            oldElem.replaceWith(newElem)
-        }
+        //     oldElem = self.find('.cloud-plugin[mod-uri="' + escape(uri) + '"]')
+        //     newElem = self.patchstorageBox('renderPlugin', plugin)
+        //     oldElem.replaceWith(newElem)
+        // }
 
         for (var i in removed) {
             uri = removed[i]
@@ -859,41 +864,39 @@ JqueryClass('patchstorageBox', {
                 $('#effect-tab-Favorites').html('Favorites (' + FAVORITES.length + ')')
             }
 
-            plugin = self.data('pluginsData')[uri]
-            oldElem = self.find('.cloud-plugin[mod-uri="' + escape(uri) + '"]')
+            // plugin = self.data('pluginsData')[uri]
+            // oldElem = self.find('.cloud-plugin[mod-uri="' + escape(uri) + '"]')
 
-            if (plugin.ps_cloud_version) {
-                // removing a plugin available on cloud, keep its store item
-                plugin.status = 'blocked'
-                plugin.bundle_name = bundle
-                delete plugin.bundles
-                plugin.ps_local_version = null
+            // if (plugin.ps_cloud_version) {
+            //     // removing a plugin available on cloud, keep its store item
+            //     plugin.status = 'available'
+            //     plugin.bundle_name = bundle
+            //     delete plugin.bundles
+            //     plugin.ps_local_version = null
 
-                newElem = self.patchstorageBox('renderPlugin', plugin)
-                oldElem.replaceWith(newElem)
+            //     var pluginData = self.patchstorageBox('mergePluginData', {}, plugin)
 
-            } else {
-                // removing local plugin means the number of possible plugins goes down
-                category = plugin.category[0]
+            //     newElem = self.patchstorageBox('renderPlugin', pluginData)
+            //     oldElem.replaceWith(newElem)
 
-                if (category && category != 'All') {
-                    if (category == 'Utility' && plugin.category.length == 2 && plugin.category[1] == 'MIDI') {
-                        category = 'MIDI'
-                    }
-                    categories[category] -= 1
-                }
-                categories['All'] -= 1
+            // } else {
+            //     // removing local plugin means the number of possible plugins goes down
+            //     category = plugin.category[0]
 
-                // remove it from store
-                delete self.data('pluginsData')[uri]
-                oldElem.remove()
-            }
+            //     if (category && category != 'All') {
+            //         categories[category] -= 1
+            //     }
+            //     categories['All'] -= 1
+
+            //     // remove it from store
+            //     delete self.data('pluginsData')[uri]
+            //     oldElem.remove()
+            // }
         }
 
-        self.patchstorageBox('setCategoryCount', categories)
+        // self.patchstorageBox('setCategoryCount', categories)
     },
 
-    // TODO: do we really need this?
     getPluginInfoData: function (plugin, full = false) {
 
         var data = $.extend(true, {}, plugin)
@@ -916,7 +919,7 @@ JqueryClass('patchstorageBox', {
         }
 
         if (full === false) {
-            return basic
+            return $.extend(true, {}, basic)
         }
         
         if (data.ports) {
@@ -938,11 +941,7 @@ JqueryClass('patchstorageBox', {
             }
         }
         
-        // TODO: solve categories question
         var category = data.category[0]
-        if (category == 'Utility' && data.category.length == 2 && data.category[1] == 'MIDI') {
-            category = 'MIDI'
-        }
 
         var package_name = (data.bundle_name) ? data.bundle_name.replace(/\.lv2$/, '') : null
         if (!package_name && data.bundles && data.bundles[0]) {
@@ -1001,8 +1000,8 @@ JqueryClass('patchstorageBox', {
                         info.window('close')
                         // remove-only action, need to manually update plugins
                         // TODO: investigate
-                        // desktop.updatePluginList([], resp.removed)
-                        // TODO: need a better solution for reloading state
+                        desktop.updatePluginList([], resp.removed)
+                        // need a better solution for reloading state
                         self.patchstorageBox('search')
                     })
                 })
@@ -1012,7 +1011,7 @@ JqueryClass('patchstorageBox', {
                     self.patchstorageBox('installPlugin', plugin, function (resp, bundlename) {
                         self.patchstorageBox('postInstallAction', resp.installed, resp.removed, bundlename)
                         info.window('close')
-                        // TODO: need a better solution for reloading state
+                        // need a better solution for reloading state
                         self.patchstorageBox('search')
                     })
                 })
@@ -1024,7 +1023,7 @@ JqueryClass('patchstorageBox', {
                     self.patchstorageBox('installPlugin', plugin, function (resp, bundlename) {
                         self.patchstorageBox('postInstallAction', resp.installed, resp.removed, bundlename)
                         info.window('close')
-                        // TODO: need a better solution for reloading state
+                        // need a better solution for reloading state
                         self.patchstorageBox('search')
                     })
                 })
@@ -1041,7 +1040,7 @@ JqueryClass('patchstorageBox', {
             self.data('info', info)
         }
 
-        self.patchstorageBox('getPluginLocalData', uri, psid, result, showInfo)
-        self.patchstorageBox('getPluginCloudData', psid, result, showInfo)
+        self.patchstorageBox('getPluginLocalData', uri || null, psid || null, result, showInfo)
+        self.patchstorageBox('getPluginCloudData', psid || null, result, showInfo)
     }
 })

@@ -122,6 +122,6 @@ UPDATE_MOD_OS_FILE='/data/{}'.format(os.environ.get('MOD_UPDATE_MOD_OS_FILE', 'm
 UPDATE_CC_FIRMWARE_FILE='/tmp/cc-firmware.bin'
 USING_256_FRAMES_FILE='/data/using-256-frames'
 
-# BLOKAS
+# Blokas Flags
 PATCHSTORAGE_ENABLED=bool(int(os.environ.get('PATCHSTORAGE_ENABLED', True)))
-UNMODIFY=bool(int(os.environ.get('UNMODIFY', True)))
+BLOKAS_ENABLED=bool(int(os.environ.get('BLOKAS_ENABLED', True)))
