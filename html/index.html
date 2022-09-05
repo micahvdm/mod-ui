@@ -208,6 +208,39 @@ $('document').ready(function() {
         $('#mod-cloud-plugins').hide()
         $('#mod-settings').hide()
         $('#mod-status').hide()
+        $('#mod-update').hide()
+        $('#blokas-update').show()
+        $('#blokas-update').statusTooltip()
+        $('#blokas-update').statusTooltip('message', 'Check for Updates', true)
+        $('#blokas-update').click(function () {
+            $.ajax({
+                type: 'GET',
+                url: '/update/check',
+                success: function (resp) {
+                    if (!confirm('New version is available! Let\'s do this?'))
+                        return
+                    
+                    $.ajax({
+                        type: 'GET',
+                        url: '/update/start',
+                        success: function (resp) {
+                            alert('Update in progress. Sit tight. \nPage will reload once update process is done.')
+                        },
+                        error: function () {
+                            alert('Oops, something ain\'t right!')
+                        },
+                        cache: false,
+                        dataType: 'json',
+                    })
+                },
+                error: function () {
+                    alert('Oops, something ain\'t right! \nMake sure your device is connected to the internet.')
+                },
+                cache: false,
+                dataType: 'json',
+            })
+        })
+
 
         // disable all calls to domain moddevices.com
         $(document).ajaxSend(function (event, xhr, options) {
@@ -661,6 +694,7 @@ $('document').ready(function() {
         <div id="patchstorage" class="icon" data-message="Patchstorage"></div>
         <div id="banks-saving">Auto saving banks...</div>
         <div id="mod-update" class="status icon"></div>
+        <div id="blokas-update" class="status icon mod-hidden"></div>
         <div id="mod-status" class="status icon mod-hidden"></div>
         <div id="mod-devices" class="status icon"></div>
         <div id="mod-settings" class="status icon mod-settings" data-message="Go to settings screen"></div>
