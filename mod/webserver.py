@@ -51,7 +51,7 @@ from mod.settings import (APP, LOG, DEV_API,
                           DEFAULT_PEDALBOARD, DEFAULT_SNAPSHOT_NAME, DATA_DIR, KEYS_PATH, USER_FILES_DIR,
                           FAVORITES_JSON_FILE, PREFERENCES_JSON_FILE, USER_ID_JSON_FILE,
                           DEV_HOST, UNTITLED_PEDALBOARD_NAME, MODEL_CPU, MODEL_TYPE, PEDALBOARDS_LABS_HTTP_ADDRESS,
-                          PATCHSTORAGE_ENABLED, BLOKAS_ENABLED)
+                          PATCHSTORAGE_ENABLED, PATCHSTORAGE_API_URL, PATCHSTORAGE_PLATFORM_ID, BLOKAS_ENABLED)
 
 from mod import (
     TextFileFlusher,
@@ -1874,6 +1874,8 @@ class TemplateHandler(TimelessRequestHandler):
             'bufferSize': get_jack_buffer_size(),
             'sampleRate': get_jack_sample_rate(),
             'patchstorage_enabled': 'true' if PATCHSTORAGE_ENABLED else 'false',
+            'patchstorage_api_url': PATCHSTORAGE_API_URL,
+            'patchstorage_platform_id': PATCHSTORAGE_PLATFORM_ID,
             'blokas_enabled': 'true' if BLOKAS_ENABLED else 'false'
         }
         return context

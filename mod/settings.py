@@ -128,4 +128,6 @@ USING_256_FRAMES_FILE='/data/using-256-frames'
 
 # Blokas Flags
 PATCHSTORAGE_ENABLED=bool(int(os.environ.get('PATCHSTORAGE_ENABLED', True)))
+PATCHSTORAGE_API_URL=os.environ.get('PATCHSTORAGE_API_URL', 'http://localhost/api/beta/patches')
+PATCHSTORAGE_PLATFORM_ID=os.environ.get('PATCHSTORAGE_PLATFORM_ID', '5027')
 BLOKAS_ENABLED=bool(int(os.environ.get('BLOKAS_ENABLED', True)))
