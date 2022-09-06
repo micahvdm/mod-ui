@@ -215,29 +215,57 @@ $('document').ready(function() {
         $('#blokas-update').click(function () {
             $.ajax({
                 type: 'GET',
-                url: '/update/check',
+                url: '/apt/check',
                 success: function (resp) {
-                    if (!confirm('New version is available! Let\'s do this?'))
+                    if (!resp.current) {
+                        alert('Oops, something went wrong! 😔')
+                        return
+                    }
+                    
+                    if (!resp.latest) {
+                        alert('Failed to get the latest available version! 😔\nMake sure your device is connected to the internet. 🌐')
+                        return
+                    }
+
+                    if (resp.latest == resp.current) {
+                        alert(`Congrats! You have the latest version: ${resp.latest} 👍`)
+                        return
+                    }
+
+                    if (!confirm(`New version is available! 🤯 \nLatest version: ${resp.latest} \nCurrent version: ${resp.current} \nUpdate can take up to 10 minutes. ⏳ \nContinue? 👌`))
                         return
                     
                     $.ajax({
                         type: 'GET',
-                        url: '/update/start',
+                        url: '/apt/upgrade',
                         success: function (resp) {
-                            alert('Update in progress. Sit tight. \nPage will reload once update process is done.')
+                            if (resp.error) {
+                                alert('Oops, something went wrong! 😔')
+                                location.reload()
+                                return
+                            }
+                            // shouldn't reach this point
+                            alert('Oops, something went wrong! 😔')
+                            location.reload()
                         },
-                        error: function () {
-                            alert('Oops, something ain\'t right!')
+                        error: function (xhr, status, error) {
+                            console.log(error)
+                            alert('Oops, something went wrong! 😔')
+                            location.reload()
                         },
                         cache: false,
                         dataType: 'json',
+                        timeout: 1000 * 180
                     })
+
+                    desktop.blockUI(true)
                 },
-                error: function () {
-                    alert('Oops, something ain\'t right! \nMake sure your device is connected to the internet.')
+                error: function (xhr, status, error) {
+                    console.log(error)
+                    alert('Oops, something went wrong! 😔')
                 },
                 cache: false,
-                dataType: 'json',
+                dataType: 'json'
             })
         })
 
