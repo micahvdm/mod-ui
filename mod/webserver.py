@@ -24,6 +24,7 @@ from tornado.ioloop import IOLoop
 from tornado.template import Loader
 from tornado.util import unicode_type
 from uuid import uuid4
+import urllib.request
 
 from mod.profile import Profile
 from mod.settings import (APP, LOG, DEV_API,
@@ -723,6 +724,55 @@ class UpdateBegin(JsonRequestHandler):
 
         IOLoop.instance().add_callback(start_restore)
         self.write(True)
+
+class APTCheck(JsonRequestHandler):
+    def get(self):
+        current = None
+        latest = None
+
+        try:
+            out = subprocess.Popen(['dpkg', '-s', 'modep-mod-ui'], stdout=subprocess.PIPE, encoding='utf8')
+            while True:
+                line = out.stdout.readline()
+                if not line:
+                    break
+                if 'Version:' in line:
+                    current = line.replace('Version: ', '').strip()
+                    break
+        
+        except Exception as err:
+            logging.error(err)
+
+        try:
+            data = json.loads(urllib.request.urlopen("https://blokas.io/modep/version/v1/").read())
+            latest = data.get('latest')
+
+        except Exception as err:
+            logging.error(err)        
+
+        self.write({
+            "current": current,
+            "latest": latest,
+        })
+
+class APTUpgrade(JsonRequestHandler):
+    def get(self):
+        error = False
+
+        try:
+            out = subprocess.run(['sleep', '10'], stdout=subprocess.DEVNULL)
+            error = any([bool(out.returncode), error])
+
+            out = subprocess.run(['true'], stdout=subprocess.DEVNULL)
+            error = any([bool(out.returncode), error])
+        
+        except Exception as err:
+            logging.error(err)
+            error = True
+
+        self.write({
+            "error": error
+        })
 
 class ControlChainDownload(SimpleFileReceiver):
     destination_dir = "/tmp/cc-update"
@@ -2266,6 +2316,9 @@ application = web.Application(
 
             (r"/update/download/", UpdateDownload),
             (r"/update/begin", UpdateBegin),
+
+            (r"/apt/check", APTCheck),
+            (r"/apt/upgrade", APTUpgrade),
 
             (r"/controlchain/download/", ControlChainDownload),
             (r"/controlchain/cancel/", ControlChainCancel),
