@@ -66,12 +66,9 @@
     SITEURL = '{{cloud_url}}'
     CLOUD_LABS_URL = '{{cloud_labs_url}}'
     PATCHSTORAGE_ENABLED = '{{patchstorage_enabled}}'
-    PATCHSTORAGE_API_URL = 'https://patchstorage.com/api/alpha/patches'
-    PATCHSTORAGE_PLATFORM_ID = 662
+    PATCHSTORAGE_API_URL = '{{patchstorage_api_url}}'
+    PATCHSTORAGE_PLATFORM_ID = '{{patchstorage_platform_id}}'
     BLOKAS_ENABLED = '{{blokas_enabled}}'
-    // TODO:
-    PATCHSTORAGE_API_URL = 'http://localhost/api/beta/patches'
-    PATCHSTORAGE_PLATFORM_ID = 5027
     PLUGINS_URL      = '{{plugins_url}}'
     PEDALBOARDS_URL  = '{{pedalboards_url}}'
     PEDALBOARDS_LABS_URL  = '{{pedalboards_labs_url}}'
@@ -232,7 +229,7 @@ $('document').ready(function() {
                         return
                     }
 
-                    if (!confirm(`New version is available! 🤯 \nLatest version: ${resp.latest} \nCurrent version: ${resp.current} \nUpdate can take up to 10 minutes. ⏳ \nContinue? 👌`))
+                    if (!confirm(`New version is available! 🤯 \nLatest version: ${resp.latest} \nCurrent version: ${resp.current} \nUpdate can take up to 10 minutes. \nContinue? 👌`))
                         return
                     
                     $.ajax({
