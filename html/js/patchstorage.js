@@ -139,7 +139,7 @@ JqueryClass('patchstorageBox', {
         patch.name = unescape(patch.title)
         patch.label = unescape(patch.title)
         patch.comment = (patch.content) ? unescape(patch.content) : unescape(patch.excerpt)
-        patch.thumbnail_href = patch.artwork.url
+        patch.thumbnail_href = patch.artwork.thumbnail_url
         patch.screenshot_href = patch.artwork.url
 
         var tags = []
@@ -300,7 +300,7 @@ JqueryClass('patchstorageBox', {
             plugin.uploader = cplugin.author
             plugin.files = cplugin.files
             plugin.state = cplugin.state.slug
-            plugin.brand = `🡅 ${cplugin.author.slug}`
+            plugin.brand = cplugin.author.slug
         }
 
         // no media - no problem, take from cloud or default img
