@@ -260,7 +260,7 @@ JqueryClass('patchstorageBox', {
         plugin.label = lplugin.label || cplugin.label
         plugin.name = cplugin.name || lplugin.name 
         plugin.comment = cplugin.comment || lplugin.comment 
-        plugin.category = (Array.isArray(lplugin.category) && lplugin.category.length) ? lplugin.category : cplugin.category
+        plugin.category = (lplugin.category && lplugin.category.length) ? lplugin.category : (cplugin.category && cplugin.category.length) ? cplugin.category : []
         plugin.tags = cplugin.tags
         plugin.author = lplugin.author
         plugin.psid = lplugin.psid || cplugin.psid
@@ -315,7 +315,7 @@ JqueryClass('patchstorageBox', {
             plugin.status = 'outdated'
         }
 
-        if (plugin.category.length == 2 && plugin.category[0] == 'Utility' && plugin.category[1] == 'MIDI') {
+        if (plugin.category && plugin.category.length == 2 && plugin.category[0] == 'Utility' && plugin.category[1] == 'MIDI') {
             plugin.category = ['MIDI',]
         }
 
