@@ -50,7 +50,8 @@ from mod.settings import (APP, LOG, DEV_API,
                           DEFAULT_PEDALBOARD, DEFAULT_SNAPSHOT_NAME, DATA_DIR, KEYS_PATH, USER_FILES_DIR,
                           FAVORITES_JSON_FILE, PREFERENCES_JSON_FILE, USER_ID_JSON_FILE,
                           DEV_HOST, UNTITLED_PEDALBOARD_NAME, MODEL_CPU, MODEL_TYPE, PEDALBOARDS_LABS_HTTP_ADDRESS,
-                          PATCHSTORAGE_ENABLED, PATCHSTORAGE_API_URL, PATCHSTORAGE_PLATFORM_ID, BLOKAS_ENABLED)
+                          PATCHSTORAGE_ENABLED, PATCHSTORAGE_API_URL, PATCHSTORAGE_PLATFORM_ID, BLOKAS_ENABLED,
+                          BLOKAS_APT_PACKAGE, BLOKAS_UPDATE_CHECK_URL)
 
 from mod import check_environment, jsoncall, safe_json_load, TextFileFlusher, get_hardware_descriptor
 from mod.bank import list_banks, save_banks, remove_pedalboard_from_banks
@@ -722,7 +723,7 @@ class APTCheck(JsonRequestHandler):
         latest = None
 
         try:
-            out = subprocess.Popen(['dpkg', '-s', 'modep-mod-ui'], stdout=subprocess.PIPE, encoding='utf8')
+            out = subprocess.Popen(['dpkg', '-s', BLOKAS_APT_PACKAGE], stdout=subprocess.PIPE, encoding='utf8')
             while True:
                 line = out.stdout.readline()
                 if not line:
@@ -735,7 +736,7 @@ class APTCheck(JsonRequestHandler):
             logging.error(err)
 
         try:
-            data = json.loads(urllib.request.urlopen("https://blokas.io/modep/version/v1/").read())
+            data = json.loads(urllib.request.urlopen(BLOKAS_UPDATE_CHECK_URL).read())
             latest = data.get('latest')
 
         except Exception as err:

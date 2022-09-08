@@ -328,7 +328,7 @@ JqueryClass('patchstorageBox', {
         var self = $(this)
         var base = PATCHSTORAGE_API_URL
         var platform = PATCHSTORAGE_PLATFORM_ID
-        var url = `${base}?per_page=100&platforms=${platform}&orderby=download_count&order=asc`
+        var url = `${base}?per_page=100&platforms=${platform}`
         var page = 1
 
         // ensure store cloud is ready
