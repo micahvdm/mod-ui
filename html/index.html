@@ -241,8 +241,6 @@ $('document').ready(function() {
                                 location.reload()
                                 return
                             }
-                            // shouldn't reach this point
-                            alert('Oops, something went wrong! 😔')
                             location.reload()
                         },
                         error: function (xhr, status, error) {
@@ -252,7 +250,7 @@ $('document').ready(function() {
                         },
                         cache: false,
                         dataType: 'json',
-                        timeout: 1000 * 180
+                        timeout: 1000 * 300
                     })
 
                     desktop.blockUI(true)
