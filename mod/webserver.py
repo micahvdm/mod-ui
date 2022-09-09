@@ -761,11 +761,9 @@ class APTUpgrade(JsonRequestHandler):
         error = False
 
         try:
-            out = subprocess.run(['sleep', '10'], stdout=subprocess.DEVNULL)
-            error = any([bool(out.returncode), error])
-
-            out = subprocess.run(['true'], stdout=subprocess.DEVNULL)
-            error = any([bool(out.returncode), error])
+            open('/tmp/modep-update', 'a').close()
+            time.sleep(600)
+            error = True
         
         except Exception as err:
             logging.error(err)
