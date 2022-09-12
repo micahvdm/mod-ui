@@ -526,7 +526,7 @@ JqueryClass('effectBox', {
                     })
                 });
 
-                if (metadata.shopify_id && !metadata.licensed) {
+                if (!BLOKAS_ENABLED && metadata.shopify_id && !metadata.licensed) {
                     desktop.createBuyButton(metadata.shopify_id)
                 }
 
@@ -546,7 +546,7 @@ JqueryClass('effectBox', {
 
             render(metadata)
 
-            if (!metadata.licensed) {
+            if (!BLOKAS_ENABLED && !metadata.licensed) {
                 desktop.fetchShopProduct(plugin.uri).then(function(product) {
                     if (product) {
                         metadata.shopify_id = product.id
