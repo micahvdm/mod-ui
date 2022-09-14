@@ -140,7 +140,7 @@ static const bool kAllowRegularCV = getenv("MOD_UI_ALLOW_REGULAR_CV") != nullptr
     },                                               \
     nullptr,                                         \
     nullptr,                                         \
-    { nullptr, nullptr }                             \
+    { nullptr }                                      \
 }
 
 // Blacklisted plugins, which don't work properly on MOD for various reasons
@@ -1776,7 +1776,7 @@ const PluginInfo_Mini* _get_plugin_info_mini(LilvWorld* const w,
     }
 
     const char* const bundleuri = lilv_node_as_uri(lilv_plugin_get_bundle_uri(p));
-    patchstorage_read_info(&info.psInfo, bundleuri);
+    patchstorage_read_info(&info->psInfo, bundleuri);
 
     // --------------------------------------------------------------------------------------------------------
 
@@ -3059,6 +3059,8 @@ static void _clear_plugin_info_mini(const PluginInfo_Mini* const info)
     if (info->gui.thumbnail != nc)
         free((void*)info->gui.thumbnail);
 
+    patchstorage_free_info(&info->psInfo);
+
     delete info;
 }
 
@@ -3089,6 +3091,8 @@ static void _fill_plugin_info_mini_from_full(const PluginInfo& info2, const Plug
     info->gui.resourcesDirectory = info2.gui.resourcesDirectory != nc ? strdup(info2.gui.resourcesDirectory) : nc;
     info->gui.screenshot         = info2.gui.screenshot         != nc ? strdup(info2.gui.screenshot)         : nc;
     info->gui.thumbnail          = info2.gui.thumbnail          != nc ? strdup(info2.gui.thumbnail)          : nc;
+
+    patchstorage_info_dup(&info->psInfo, &info2.psInfo);
 }
 
 // --------------------------------------------------------------------------------------------------------
