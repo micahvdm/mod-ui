@@ -3,8 +3,7 @@
 
 typedef struct
 {
-    const char *version;
-    const char *id;
+    const char *json;
 } patchstorage_info_t;
 
 // The const char* members of the info struct must be freed, if they're not nullptr

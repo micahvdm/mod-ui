@@ -112,7 +112,7 @@ static const bool kAllowRegularCV = getenv("MOD_UI_ALLOW_REGULAR_CV") != nullptr
     nullptr, nullptr, nullptr, nullptr, nullptr, \
     nullptr, nullptr, 0, 0, 0, 0, 0,             \
     { nullptr, nullptr, nullptr },               \
-    { nullptr, nullptr },                        \
+    { nullptr },                                 \
     false                                        \
 }
 
@@ -139,7 +139,7 @@ static const bool kAllowRegularCV = getenv("MOD_UI_ALLOW_REGULAR_CV") != nullptr
     },                                               \
     nullptr,                                         \
     nullptr,                                         \
-    { nullptr, nullptr }                             \
+    { nullptr }                                      \
 }
 
 // Blacklisted plugins, which don't work properly on MOD for various reasons

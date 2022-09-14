@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import json
 from ctypes import *
 from mod import get_unique_name
 
@@ -14,6 +15,18 @@ def charPtrToString(charPtr):
     if isinstance(charPtr, str):
         return charPtr
     return charPtr.decode("utf-8", errors="ignore")
+
+def decodePatchstorageJsonInStructDict(structDict):
+    ps = structDict.get('patchstorage', None)
+    js = None
+    if ps:
+        try:
+            js = json.loads(ps)
+        except:
+            print('Patchstorage json parsing failed!')
+            js = None
+        structDict['patchstorage'] = js
+    return structDict
 
 # ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes POINTER(c_char_p) into a python string list
@@ -292,12 +305,6 @@ class PluginPreset(Structure):
         ("path", c_char_p),
     ]
 
-class PatchstorageInfo(Structure):
-    _fields_ = [
-        ("version", c_char_p),
-        ("id", c_char_p)
-    ]
-
 class PluginInfo(Structure):
     _fields_ = [
         ("valid", c_bool),
@@ -323,7 +330,7 @@ class PluginInfo(Structure):
         ("ports", PluginPorts),
         ("parameters", POINTER(PluginParameter)),
         ("presets", POINTER(PluginPreset)),
-        ("patchstorage", PatchstorageInfo),
+        ("patchstorage", c_char_p),
     ]
 
 # a subset of PluginInfo
@@ -349,7 +356,7 @@ class PluginInfo_Mini(Structure):
         ("builder", c_int),
         ("licensed", c_int),
         ("gui", PluginGUI_Mini),
-        ("patchstorage", PatchstorageInfo),
+        ("patchstorage", c_char_p),
     ]
 
 class PluginInfo_Essentials(Structure):
@@ -504,8 +511,7 @@ c_struct_types = (PluginAuthor,
                   PluginLongParameterRanges,
                   PedalboardMidiControl,
                   PedalboardHardware,
-                  PedalboardTimeInfo,
-                  PatchstorageInfo)
+                  PedalboardTimeInfo)
 
 c_structp_types = (POINTER(PluginGUIPort),
                    POINTER(PluginPortScalePoint),
@@ -707,7 +713,10 @@ def get_plugin_list():
 # get all available plugins
 # this triggers short scanning of all plugins
 def get_all_plugins():
-    return structPtrPtrToList(utils.get_all_plugins())
+    plugins = structPtrPtrToList(utils.get_all_plugins())
+    for p in plugins:
+        decodePatchstorageJsonInStructDict(p)
+    return plugins
 
 # get a specific plugin
 # NOTE: may throw
@@ -715,7 +724,7 @@ def get_plugin_info(uri):
     info = utils.get_plugin_info(uri.encode("utf-8"))
     if not info:
         raise Exception
-    return structToDict(info.contents)
+    return decodePatchstorageJsonInStructDict(structToDict(info.contents))
 
 # get a specific plugin (non-cached specific info)
 # NOTE: may throw
