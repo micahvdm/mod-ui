@@ -2257,6 +2257,9 @@ class FilesList(JsonRequestHandler):
 
         elif filetype == "sfz":
             return ("SFZ Instruments", (".sfz",))
+        
+        elif filetype == "tapf":
+            return ("Amplifier Profiles", (".tapf",))
 
         else:
             return (None, ())
