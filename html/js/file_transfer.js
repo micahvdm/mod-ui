@@ -100,6 +100,7 @@ function SimpleTransference(from, to, options) {
             dataType: 'binary',
             cache: false,
             global: false,
+            json: false,
             error: function (resp) {
                 if (resp.status == 401 && self.reauthorizeDownload != null && ! self.reauthorizedDownload) {
                     console.log("[TRANSFERENCE] download unauthorized, retrying authentication...")

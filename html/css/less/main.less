@@ -70,6 +70,7 @@
 
 @import 'variables.less';
 @import 'cloud_plugins.less';
+@import 'patchstorage.less';
 @import 'banks.less';
 @import 'file_manager.less';
 @import 'pedalboards.less';
@@ -308,6 +309,21 @@ hr.dotted {
       background-position: -315px bottom;
     }
   }
+  #patchstorage {
+    background-image: url(../img/patchstorage-menu.png?v=2);
+    background-position: 0px top;
+    background-repeat: no-repeat;
+    transition: all 0.33s;
+    background-size: cover;
+    &:hover {
+      background-color: #000;
+      background-position: 0px bottom;
+    }
+    &.selected {
+      background-color: #000;
+      background-position: 0px bottom;
+    }
+  }
   #mod-pedalboard {
     background-image: url(../img/menu-icons-sprite.png?v=2);
     background-position: -90px top;
@@ -505,7 +521,7 @@ hr.dotted {
   float: right;
   font-size: 21px;
 }
-#cloud_update_all {
+#cloud_update_all, #patchstorage_update_all {
   background-image: url(../img/icons/36/update.png);
   float: right;
   font-size: 21px;
@@ -516,6 +532,7 @@ hr.dotted {
 header#pedalboard-actions,
 #bank-library header,
 #cloud-plugins-library header,
+#patchstorage-library header,
 #pedalboards-library header,
 #file-manager-library header {
   display: block;
@@ -1078,6 +1095,9 @@ header#pedalboard-actions {
           left: 30px;
           font-size: 16px;
       }
+      img {
+        max-width: 100%;
+      }
     }
     figure {
       .make-md-column(4);
@@ -1585,3 +1605,6 @@ header#pedalboard-actions {
 	padding: 5px;
 	border-radius: 10px;
 }
+
+// for overwrites
+@import 'blokas.less';

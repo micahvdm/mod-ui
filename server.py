@@ -19,7 +19,7 @@ def create_dummy_credentials():
             fh.write(uid)
     if not os.path.isfile(os.environ['MOD_DEVICE_KEY']):
         try:
-            from Crypto.PublicKey import RSA
+            from Cryptodome.PublicKey import RSA
             key = RSA.generate(2048)
             with open(os.environ['MOD_DEVICE_KEY'], 'wb') as fh:
                 fh.write(key.exportKey('PEM'))
@@ -33,7 +33,7 @@ DATA_DIR = join(ROOT, 'data')
 os.makedirs(DATA_DIR, exist_ok=True)
 
 os.environ['MOD_DEV_ENVIRONMENT'] = os.environ.get("MOD_DEV_ENVIRONMENT", '1')
-os.environ['MOD_DATA_DIR'] = DATA_DIR
+#os.environ['MOD_DATA_DIR'] = DATA_DIR
 os.environ['MOD_LOG'] = os.environ.get("MOD_LOG", '1')
 os.environ['MOD_KEY_PATH'] = join(DATA_DIR, 'keys')
 os.environ['MOD_DEVICE_WEBSERVER_PORT'] = '8888'

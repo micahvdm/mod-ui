@@ -1,88 +1,98 @@
-<div class="js-close plugin-info plugin-container" mod-uri="{{escaped_uri}}">
+<div class="js-close patchstorage-info plugin-container" mod-uri="{{escaped_uri}}">
     <div class="container box">
         <div class="row-fluid clearfix">
           <span class="js-close alignright btn btn-mini btn-danger">Close</span>
-          {{#price}}
-          <div class="description-price-container">
-            <div class="description-price">{{price}}</div>
-          </div>
-          {{/price}}
-          {{#licensed}}
-          <div class="description-price-container">
-            <div class="description-licensed"></div>
-          </div>
-          {{/licensed}}
-          {{#coming}}
-          <div class="description-price-container">
-            <div class="description-coming-soon"></div>
-          </div>
-          {{/coming}}
             <div class="span10 offset1 clearfix">
-                <figure class="screenshot">
-                    {{#demo}}
-                    <div class="demo-plugin demo-mask" title="This plugin is for demo purposes only and shall not be used live or in a studio"></div>
-                    {{/demo}}
-                    {{#show_build_env}}
-                    <div class="beta">{{build_env_uppercase}}</div>
-                    {{/show_build_env}}
+                <figure class="screenshot text-center">
+                    {{#state}}
+                    <div class="state {{state}}" title="{{state}}"></div>
+                    {{/state}}
                     <img src="{{screenshot_href}}">
                 </figure>
 
                 <div class="plugin-description">
                     <header>
-                      <h1>{{name}}</h1>
-                        {{#installed}}
-                        <a class="favorite-button {{favorite_class}}" title="Favorite Plugin"></a>
-                        {{/installed}}
-                        <br/>
+                      <h1 class="text-uppercase">{{name}}</h1>
+                        <p></p>
                         <p>
-                            <b>URI:</b> {{uri}}<br/>
+                            {{#category}}
                             <b>Category:</b> {{category}}<br/>
-                        </p>
-                        <p>
+                            {{/category}}
+                            {{#tags}}
+                            <b>Tags:</b> {{tags}}<br/>
+                            {{/tags}}
+                            {{#author.name}}
                             <b>Author:</b> {{author.name}}<br/>
+                            {{#author.homepage}}
                             <b>Homepage:</b> <a href="{{author.homepage}}" target="_blank">{{author.homepage}}</a><br/>
+                            {{/author.homepage}}
+                            {{/author.name}}
+                            {{#uploader}}
+                            <b>Uploader:</b> <span style="text-transform: uppercase;">{{uploader}}</span><br/>
+                            {{#link}}
+                            <b>Link:</b> <a href="{{link}}" target="_blank">{{link}}</a><br/>
+                            {{/link}}
                         </p>
+                        {{/uploader}}
                         <p class="version">
+                            {{#local_version_string}}
+                            <span>
+                                Plugin Build Version: <span class="bold">{{local_version_string}}</span><br/>
+                            </span>
+                            {{/local_version_string}}
+                            {{#cloud_revision}}
                             <span class="js-latest-version">
-                                Latest Version: <span class="bold">{{latest_version}}</span><br/>
+                                <span class="ps-label">P</span> Latest Revision: <span class="bold">{{cloud_revision}}</span><br/>
                             </span>
+                            {{/cloud_revision}}
+                            {{#local_revision}}
                             <span class="js-installed-version">
-                                Installed Version: <span class="bold">{{installed_version}}</span><br/>
+                                <span class="ps-label">P</span> Installed Revision: <span class="bold">{{local_revision}}</span><br/>
                             </span>
+                            {{/local_revision}}
+                            {{#download_count}}
+                            <span>
+                                <span class="ps-label">P</span> Downloads: <span class="bold">{{download_count}}</span><br/>
+                            </span>
+                            {{/download_count}}
                             <table><tr><td>
-                            <button class="js-install btn btn-info btn-mini">Install{{#trial}} Trial{{/trial}}</button>
-                            <button class="js-upgrade btn btn-info btn-mini">Upgrade{{#trial}} Trial{{/trial}}</button>
-                            <button class="js-remove btn btn-danger btn-mini">
-                              Remove{{#trial}} Trial{{/trial}}
-                            </button>
+                            <button class="js-install btn btn-info btn-mini">Install</button>
+                            <button class="js-upgrade btn btn-info btn-mini">Update</button>
+                            <button class="js-remove btn btn-danger btn-mini">Remove</button>
                             </td>
-                            {{#shopify_id}}
-                            <td>&nbsp;</td>
-                            <td><div class="buy-button" id='product-component-{{shopify_id}}'></div></td>
-                            {{/shopify_id}}
                             </tr></table>
                         </p>
                     </header>
+                    <p></p>
                     <p>{{comment}}</p>
                     {{#pedalboard_href}}
-                    <a target="_blank" href="{{pedalboard_href}}" class="btn btn-info online-button-href">
+                    <a target="_blank" href="{{pedalboard_href}}" class="btn btn-info">
                         <span>See it in action</span>
                     </a>
                     {{/pedalboard_href}}
-                    <a target="_blank" href="{{plugin_href}}" class="btn btn-info online-button-href">
-                        <span>See online</span>
+                    {{#url}}
+                    <a target="_blank" href="{{url}}" class="btn btn-info">
+                        <span>Comments</span>
                     </a>
-                    {{#discussion_href}}
-                    <a target="_blank" href="{{discussion_href}}" class="btn btn-info online-button-href">
-                        <span>See discussion</span>
+                    {{/url}}
+                    {{#donate_url}}
+                    <a target="_blank" href="{{donate_url}}" class="btn btn-info">
+                        <span>Donate to Author</span>
                     </a>
-                    {{/discussion_href}}
+                    {{/donate_url}}
+                    {{#source_code_url}}
+                    <a target="_blank" href="{{source_code_url}}" class="btn btn-info">
+                        <span>Source Code</span>
+                    </a>
+                    {{/source_code_url}}
+                    <p></p>
                     {{#documentation_href}}
                     <a target="_blank" href="{{documentation_href}}" class="btn btn-info online-button-href">
                         <span>See documentation</span>
                     </a>
                     {{/documentation_href}}
+                    {{#ports}}
+                    {{#ports.control}}
                     <div class="plugin-controlports">
                         <p><strong>CONTROL PORTS:</strong></p>
                         <table class="plugin-specs table table-bordered">
@@ -102,6 +112,9 @@
                         {{/ports.control.input}}
                         </table>
                     </div>
+                    {{/ports.control}}
+                    {{#ports.cv}}
+                    {{#ports.cv.input}}
                     <div class="plugin-cvinputs">
                         <p><strong>CV INPUTS:</strong></p>
                         <table class="plugin-specs table table-bordered">
@@ -111,16 +124,17 @@
                             <th>Min</th>
                             <th>Max</th>
                         </tr>
-                        {{#ports.cv.input}}
+                        
                         <tr>
                             <td>{{shortName}}</td>
                             <td>{{formatted.default}}</td>
                             <td>{{formatted.minimum}}</td>
                             <td>{{formatted.maximum}}</td>
                         </tr>
-                        {{/ports.cv.input}}
                         </table>
                     </div>
+                    {{/ports.cv.input}}
+                    {{#ports.cv.output}}
                     <div class="plugin-cvoutputs">
                         <p><strong>CV OUTPUTS:</strong></p>
                         <table class="plugin-specs table table-bordered">
@@ -130,16 +144,17 @@
                             <th>Min</th>
                             <th>Max</th>
                         </tr>
-                        {{#ports.cv.output}}
                         <tr>
                             <td>{{shortName}}</td>
                             <td>{{formatted.default}}</td>
                             <td>{{formatted.minimum}}</td>
                             <td>{{formatted.maximum}}</td>
                         </tr>
-                        {{/ports.cv.output}}
                         </table>
                     </div>
+                    {{/ports.cv.output}}
+                    {{/ports.cv}}
+                    {{/ports}}
                 </div>
             </div>
         </div>

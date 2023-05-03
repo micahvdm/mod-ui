@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html class="{% if blokas_enabled %}blokas{% end %}">
 
 <!-- HEAD -->
 <head>
 <meta charset="UTF-8">
-<title>MOD Settings</title>
+<title>{% if blokas_enabled %}Settings{% else %}MOD Settings{% end %}</title>
 
+{% if blokas_enabled %}
+<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+{% else %}
 <link rel="apple-touch-icon" sizes="57x57" href="img/favicon/apple-icon-57x57.png">
 <link rel="apple-touch-icon" sizes="60x60" href="img/favicon/apple-icon-60x60.png">
 <link rel="apple-touch-icon" sizes="72x72" href="img/favicon/apple-icon-72x72.png">
@@ -20,8 +23,9 @@
 <link rel="icon" type="image/png" sizes="96x96" href="img/favicon/favicon-96x96.png">
 <link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
 <link rel="manifest" href="img/favicon/manifest.json">
-<meta name="msapplication-TileColor" content="#111111">
 <meta name="msapplication-TileImage" content="img/favicon/ms-icon-144x144.png">
+{% end %}
+<meta name="msapplication-TileColor" content="#111111">
 <meta name="theme-color" content="#111111">
 
 <link rel="stylesheet" type="text/css" href="css/fontello/css/fontello.css?v={{version}}"/>
@@ -159,7 +163,7 @@ function refresh_sysinfo() {
             $("#info-kernel-machine").text(INFO.uname.machine)
             $("#info-kernel-release").text(INFO.uname.release)
             $("#info-kernel-version").text(INFO.uname.version)
-            if (info.platform != "duox") {
+            if (info.platform != "duox" || info.model == "duox:aarch64-a53") {
                 $("#prefs-audio-separate-spdif-outs_div").hide()
             }
         },
@@ -925,7 +929,7 @@ $('document').ready(function() {
     <div id="bank-library">
         <div class="box clearfix">
             <header>
-                <h1 class="bottom top">MOD Settings</h1>
+                <h1 class="bottom top">{% if not blokas_enabled %}MOD {% end %}Settings</h1>
             </header>
             <div class="pedalboards clearfix js-pedalboards"></div>
         </div>
@@ -1271,7 +1275,7 @@ $('document').ready(function() {
                         <ul>
                             <li>Disconnect the device from the Control Chain/Ethernet port</li>
                             <li>Hold down the first footswitch on the Control Chain device</li>
-                            <li>While the first footswitch is down, connect the device to the MOD Duo via USB</li>
+                            <li>While the first footswitch is down, connect the device to the MOD unit via USB</li>
                             <li>Wait for the "update completed" message</li>
                             <li>Disconnect the device from the USB port</li>
                             <li>Connect it to the Control Chain/Ethernet port once again</li>

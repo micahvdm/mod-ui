@@ -93,6 +93,14 @@ JqueryClass('cloudPluginBox', {
                 self.cloudPluginBox('search')
             }, 400);
         })
+        searchbox.on('cut', function(e) {
+            if (lastKeyTimeout != null) {
+                clearTimeout(lastKeyTimeout)
+            }
+            lastKeyTimeout = setTimeout(function () {
+                self.cloudPluginBox('search')
+            }, 400);
+        })
         searchbox.on('paste', function(e) {
             if (lastKeyTimeout != null) {
                 clearTimeout(lastKeyTimeout)
@@ -939,7 +947,7 @@ JqueryClass('cloudPluginBox', {
                 label : plugin.label,
                 ports : plugin.ports,
                 plugin_href: PLUGINS_URL + '/' + btoa(plugin.uri),
-                pedalboard_href: desktop.getPedalboardHref(plugin.uri),
+                pedalboard_href: desktop.getPedalboardHref(plugin.uri, plugin.stable === false),
                 build_env_uppercase: (plugin.buildEnvironment || "LOCAL").toUpperCase(),
                 show_build_env: plugin.buildEnvironment !== "prod",
             };

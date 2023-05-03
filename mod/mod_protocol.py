@@ -18,7 +18,7 @@ CMD_ARGS = {
         'g': [int],
         's': [int,float],
         'ncp': [int,int,int],
-        'is': [int,int,int,int,int,str,str,],
+        'is': [int,int,int,int,int,int,str,str,],
         'b': [int,int],
         'bn': [str,],
         'bd': [int],
@@ -87,6 +87,7 @@ CMD_ARGS = {
         'sys_uni': [int,str],
         'sys_val': [int,str],
         'sys_ind': [int,float],
+        'sys_pop': [int,int,str,str],
         'sys_pch': [int],
         'sys_spc': [int],
     },
@@ -196,6 +197,7 @@ CMD_SYS_CHANGE_NAME               = 'sys_nam'
 CMD_SYS_CHANGE_UNIT               = 'sys_uni'
 CMD_SYS_CHANGE_VALUE              = 'sys_val'
 CMD_SYS_CHANGE_WIDGET_INDICATOR   = 'sys_ind'
+CMD_SYS_LAUNCH_POPUP              = 'sys_pop'
 CMD_SYS_PAGE_CHANGE               = 'sys_pch'
 CMD_SYS_SUBPAGE_CHANGE            = 'sys_spc'
 CMD_DUO_BOOT                      = 'boot'
@@ -218,6 +220,11 @@ BANK_FUNC_TRUE_BYPASS     = 1
 BANK_FUNC_PEDALBOARD_NEXT = 2
 BANK_FUNC_PEDALBOARD_PREV = 3
 BANK_FUNC_COUNT           = 4
+
+FLAG_NAVIGATION_FACTORY       = 0x1
+FLAG_NAVIGATION_READ_ONLY     = 0x2
+FLAG_NAVIGATION_DIVIDER       = 0x4
+FLAG_NAVIGATION_TRIAL_PLUGINS = 0x8
 
 FLAG_CONTROL_BYPASS           = 0x001
 FLAG_CONTROL_TAP_TEMPO        = 0x002
@@ -431,6 +438,8 @@ def cmd_to_str(cmd):
         return "CMD_SYS_CHANGE_VALUE"
     if cmd == "sys_ind":
         return "CMD_SYS_CHANGE_WIDGET_INDICATOR"
+    if cmd == "sys_pop":
+        return "CMD_SYS_LAUNCH_POPUP"
     if cmd == "sys_pch":
         return "CMD_SYS_PAGE_CHANGE"
     if cmd == "sys_spc":

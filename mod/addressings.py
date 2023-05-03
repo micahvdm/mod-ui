@@ -24,6 +24,7 @@ from mod.control_chain import (
   CC_MODE_COLOURED,
   CC_MODE_MOMENTARY,
   CC_MODE_REVERSE,
+  CC_MODE_GROUP,
   ControlChainDeviceListener,
 )
 from mod.settings import PEDALBOARD_INSTANCE_ID
@@ -897,6 +898,17 @@ class Addressings(object):
 
         elif actuator_type == self.ADDRESSING_TYPE_BPM:
             addressings = self.virtual_addressings[actuator_uri]
+
+            # make sure to not add the same addressing more than once
+            for i, addr in enumerate(addressings):
+                if addressing_data['actuator_uri'] != addr['actuator_uri']:
+                    continue
+                if addressing_data['instance_id'] != addr['instance_id']:
+                    continue
+                if addressing_data['port'] != addr['port']:
+                    continue
+                return None
+
             addressings.append(addressing_data)
 
         elif actuator_type == self.ADDRESSING_TYPE_CC:
@@ -1142,8 +1154,23 @@ class Addressings(object):
         instance_id = addressing_data['instance_id']
         portsymbol = addressing_data['port']
 
-        for i in range(len((addressings))):
-            addr = addressings[i]
+        for i, addr in enumerate(addressings):
+            if actuator_uri != addr['actuator_uri']:
+                continue
+            if instance_id != addr['instance_id']:
+                continue
+            if portsymbol != addr['port']:
+                continue
+            addressings.pop(i)
+            break
+
+    def remove_virtual(self, addressing_data, actuator_uri):
+        addressings = self.virtual_addressings[actuator_uri]
+
+        instance_id = addressing_data['instance_id']
+        portsymbol = addressing_data['port']
+
+        for i, addr in enumerate(addressings):
             if actuator_uri != addr['actuator_uri']:
                 continue
             if instance_id != addr['instance_id']:
@@ -1183,8 +1210,7 @@ class Addressings(object):
             addressings.remove(addressing_data)
 
         elif actuator_type == self.ADDRESSING_TYPE_BPM:
-            addressings = self.virtual_addressings[actuator_uri]
-            addressings.remove(addressing_data)
+            self.remove_virtual(addressing_data, actuator_uri)
 
         elif actuator_type == self.ADDRESSING_TYPE_CV:
             addressings = self.cv_addressings[actuator_uri]

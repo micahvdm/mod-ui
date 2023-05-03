@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html class="{% if blokas_enabled %}blokas{% end %}">
 
 <!-- HEAD -->
 <head>
 <meta charset="UTF-8">
-<title>pi-Stomp</title>
+<title>{% if blokas_enabled %}Pedalboard{% else %}MOD{% end %}</title>
 
+{% if blokas_enabled %}
+<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+{% else %}
 <link rel="apple-touch-icon" sizes="57x57" href="img/favicon/apple-icon-57x57.png">
 <link rel="apple-touch-icon" sizes="60x60" href="img/favicon/apple-icon-60x60.png">
 <link rel="apple-touch-icon" sizes="72x72" href="img/favicon/apple-icon-72x72.png">
@@ -20,8 +23,9 @@
 <link rel="icon" type="image/png" sizes="96x96" href="img/favicon/favicon-96x96.png">
 <link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
 <link rel="manifest" href="img/favicon/manifest.json">
-<meta name="msapplication-TileColor" content="#111111">
 <meta name="msapplication-TileImage" content="img/favicon/ms-icon-144x144.png">
+{% end %}
+<meta name="msapplication-TileColor" content="#111111">
 <meta name="theme-color" content="#111111">
 
 <link rel="stylesheet" type="text/css" href="css/fontello/css/fontello.css?v={{version}}"/>
@@ -54,6 +58,8 @@
 <script type="text/javascript" src="js/lib/jquery.textareaAutoResize.js?v={{version}}"></script>
 <script type="text/javascript" src="js/lib/arrive.min.js?v={{version}}"></script>
 <script type="text/javascript" src="js/lib/lunr.min.js?v={{version}}"></script>
+{% if not blokas_enabled %}
+{% end %}
 <script type="text/javascript" src="js/lib/slick/slick.min.js?v={{version}}"></script>
 
 <script type="text/javascript">
@@ -61,6 +67,11 @@
     var TEMPLATES = {}
     SITEURL = '{{cloud_url}}'
     CLOUD_LABS_URL = '{{cloud_labs_url}}'
+    PATCHSTORAGE_ENABLED = '{{patchstorage_enabled}}'
+    PATCHSTORAGE_API_URL = '{{patchstorage_api_url}}'
+    PATCHSTORAGE_PLATFORM_ID = '{{patchstorage_platform_id}}'
+    PATCHSTORAGE_TARGET_ID = '{{patchstorage_target_id}}'
+    BLOKAS_ENABLED = '{{blokas_enabled}}'
     PLUGINS_URL      = '{{plugins_url}}'
     PEDALBOARDS_URL  = '{{pedalboards_url}}'
     PEDALBOARDS_LABS_URL  = '{{pedalboards_labs_url}}'
@@ -127,6 +138,8 @@ $('document').ready(function() {
         pedalboardTrigger: $('#main-menu #mod-plugins'),
         cloudPluginBox: $('#cloud-plugins-library'),
         cloudPluginBoxTrigger: $('#mod-cloud-plugins'),
+        patchstorageBox: $('#patchstorage-library'),
+        patchstorageBoxTrigger: $('#patchstorage'),
         pedalboardBox: $('#pedalboards-library'),
         pedalboardBoxTrigger: $('#main-menu #mod-pedalboard'),
         bankBox: $('#bank-library'),
@@ -179,10 +192,8 @@ $('document').ready(function() {
     } else {
         desktop.upgradeWindow.upgradeWindow('setErrored')
 
-        // hide stuff that is only relevant to MOD Devices
         $('#mod-bypassLeft').hide()
         $('#mod-bypassRight').hide()
-        $('#mod-cloud-plugins').hide()
         $('#mod-update').hide()
         $('#pedalboard-info').find('.js-cloud').hide()
 
@@ -191,7 +202,101 @@ $('document').ready(function() {
         $('#mod-status').show().statusTooltip('updatePosition')
     }
 
+    if ({{blokas_enabled}}) {
+
+        function do_blokas_update(silent = false) {
+            $.ajax({
+                type: 'GET',
+                url: '/apt/check',
+                success: function (resp) {
+                    if (!resp.current) {
+                        if (!silent) { alert('Oops, something went wrong! 😔') }
+                        return false
+                    }
+                    
+                    if (!resp.latest) {
+                        if (!silent) { alert('Failed to get the latest available version! 😔\nMake sure your device is connected to the internet. 🌐') }
+                        return false
+                    }
+
+                    if (resp.latest == resp.current) {
+                        if (!silent) { alert(`Congrats! You have the latest version: ${resp.latest} 👍`) }
+                        return false
+                    }
+
+                    if (silent) {
+                        $('#blokas-update').statusTooltip('message', 'Update Available', true)
+                        $('#blokas-update').mouseover();
+                        setTimeout(function () {
+                            $('#blokas-update').mouseleave();
+                        }, 10000)
+                        return true
+                    }
+
+                    if (!confirm(`New version is available! 🤯 \nLatest version: ${resp.latest} \nCurrent version: ${resp.current} \nUpdate can take up to 10 minutes. \nContinue? 👌`))
+                        return
+                    
+                    $.ajax({
+                        type: 'GET',
+                        url: '/apt/upgrade',
+                        success: function (resp) {
+                            if (resp.error) {
+                                alert('Oops, something went wrong! 😔')
+                                location.reload()
+                                return
+                            }
+                            location.reload()
+                        },
+                        error: function (xhr, status, error) {
+                            console.log(error)
+                            alert('Oops, something went wrong! 😔')
+                            location.reload()
+                        },
+                        cache: false,
+                        dataType: 'json',
+                        timeout: 1000 * 300
+                    })
+
+                    desktop.blockUI(true)
+                },
+                error: function (xhr, status, error) {
+                    console.log(error)
+                    alert('Oops, something went wrong! 😔')
+                },
+                cache: false,
+                dataType: 'json'
+            })
+        }
+
+        $('#mod-devices').hide()
+        $('#mod-online-pedalboards').hide()
+        $('#mod-cloud-plugins').hide()
+        $('#mod-settings').hide()
+        $('#mod-status').hide()
+        $('#mod-update').hide()
+        $('#blokas-update').show()
+        $('#blokas-update').statusTooltip()
+        $('#blokas-update').statusTooltip('message', 'Check for Updates', true)
+        $('#blokas-update').click(function () {
+            do_blokas_update()
+        })
+        do_blokas_update(true)
+
+        // disable all calls to domain moddevices.com
+        $(document).ajaxSend(function (event, xhr, options) {
+            if (options.url && !options.url.startsWith('/') && xhr.abort) {
+                var domain = (new URL(options.url)).hostname
+                if (domain.includes('moddevices.com')) xhr.abort()
+            }
+        })
+    }
+
+    if (!{{patchstorage_enabled}}) {
+        $('#patchstorage').hide()
+    }
+
     if (PREFERENCES['dev-mode'] == "on") {
+        console.log('DEV Mode Enabled')
         enable_dev_mode(true)
     }
     if (PREFERENCES['plugins-folded'] == "true") {
@@ -268,6 +373,7 @@ $('document').ready(function() {
 <script type="text/javascript" src="js/banks.js?v={{version}}"></script>
 <script type="text/javascript" src="js/effects.js?v={{version}}"></script>
 <script type="text/javascript" src="js/cloudplugin.js?v={{version}}"></script>
+<script type="text/javascript" src="js/patchstorage.js?v={{version}}"></script>
 <script type="text/javascript" src="js/mididevices.js?v={{version}}"></script>
 <script type="text/javascript" src="js/snapshot.js?v={{version}}"></script>
 <script type="text/javascript" src="js/hardware.js?v={{version}}"></script>
@@ -286,6 +392,9 @@ $('document').ready(function() {
 
 <!-- BODY -->
 <body class="mod-dark">
+
+<!-- <div id="dropable-area" style="position:fixed;width:30px;height:30px;left:10px;top:10px;background:rgba(0,255,0,0.1);z-index:999999999;pointer-events:none;"></div> -->
+<!-- <div id="draggable-area" style="position:fixed;width:30px;height:30px;left:80px;top:80px;background:rgba(255,0,0,0.1);z-index:999999999;pointer-events:none;"></div> -->
 
 <!-- LOADING SVG -->
 <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" id="loading" class="loadinganim" version="1.1">
@@ -405,6 +514,9 @@ $('document').ready(function() {
                         <label for="pedalboard-share-title">
                             PEDALBOARD NAME <br/>
                             <input type="text" class="form-control" id="pedalboard-share-title" placeholder="How will you call this pedalboard?"/>
+                        </label>
+                        <label for="pedalboard-share-hidden">
+                            <input type="checkbox" id="pedalboard-share-hidden" style="margin-right:4px">Hide pedalboard from public feed</input>
                         </label>
                         <label for="pedalboard-share-comment">
                             <textarea rows="4" id="pedalboard-share-comment" class="form-control" placeholder="What's special about this pedalboard?"></textarea>
@@ -618,12 +730,14 @@ $('document').ready(function() {
         <div id="mod-pedalboard" class="icon" data-message="Pedalboards Library"></div>
         <div id="mod-bank" class="icon" data-message="Banks"></div>
         <div id="mod-file-manager" class="icon" data-message="File Manager"></div>
-        <div id="mod-cloud-plugins" class="icon mod-hidden" data-message="Plugin Store"></div>
+        <div id="mod-cloud-plugins" class="icon" data-message="Plugin Store"></div>
+        <div id="patchstorage" class="icon" data-message="Patchstorage"></div>
         <div id="banks-saving">Auto saving banks...</div>
-        <div id="mod-update" class="icon mod-hidden"></div>
+        <div id="mod-update" class="status icon"></div>
+        <div id="blokas-update" class="status icon mod-hidden"></div>
         <div id="mod-status" class="status icon mod-hidden"></div>
         <div id="mod-devices" class="status icon"></div>
-        <div id="mod-settings" class="icon mod-hidden" data-message="Go to settings screen"></div>
+        <div id="mod-settings" class="status icon mod-settings" data-message="Go to settings screen"></div>
         <div id="mod-ram" class="icon">
             <div class="progress" id="ram-bar" style="width: 100%;">
                 <div class="bar"></div> <!-- not sure if this is needed -->
@@ -638,7 +752,7 @@ $('document').ready(function() {
         </div>
         <div id="mod-cpu-stats" class="icon mod-hidden">0 GHz / 0 &deg;C</div>
         <div id="mod-xruns" class="icon mod-hidden">0 Xruns</div>
-        <div id="mod-buffersize" class="icon">{{bufferSize}} frames</div>
+        <div id="mod-buffersize" class="icon mod-hidden">{{bufferSize}} frames</div>
         <div id="mod-bypassRight" class="icon mod-bypass">Bypass 2</div>
         <div id="mod-bypassLeft" class="icon mod-bypass">Bypass 1</div>
         <div id="mod-show-midi-port" class="icon">MIDI Ports</div>
@@ -799,6 +913,81 @@ $('document').ready(function() {
     </div>
     <!-- END CLOUD PLUGINS LIBRARY -->
 
+    <!-- PATCHSTORAGE -->
+    <div id="patchstorage-library" class="mod-hidden mod-init-hidden">
+        <div>
+            <header>
+                <h1 class="bottom top">PATCHSTORAGE (Beta)</h1>
+                <button class="status icon mod-bypass" id="patchstorage_update_all">Refresh</button>
+            </header>
+
+            <div class="filter clearfix">
+                <h2>Filter</h2>
+                <div class="control-group">
+                    <input type="checkbox" name="non-installed" id="patchstorage-non-installed"/>
+                    <label for="patchstorage-non-installed">NOT INSTALLED</label>
+                </div>
+                <div class="control-group">
+                    <input type="checkbox" name="installed" id="patchstorage-installed"/>
+                    <label for="patchstorage-installed">INSTALLED</label>
+                </div>
+                <div class="control-group">
+                    <input type="checkbox" name="outdated" id="patchstorage-outdated"/>
+                    <label for="patchstorage-outdated">OUTDATED</label>
+                </div>
+                <div class="control-group">
+                    <input type="checkbox" name="other" id="patchstorage-other" />
+                    <label for="patchstorage-other">LOCAL PLUGINS</label>
+                </div>
+                <div class="">
+                    <input class="form-control" placeholder="Filter by keyword" type="search" autocomplete="off" />
+                </div>
+                <ul class="categories list list-unstyled" style="margin-bottom: 0px;">
+                    <li id="patchstorage-tab-All">All</li>
+                    <li id="patchstorage-tab-ControlVoltage">Control&nbsp;Voltage</li>
+                    <li id="patchstorage-tab-Delay">Delay</li>
+                    <li id="patchstorage-tab-Distortion">Distortion</li>
+                    <li id="patchstorage-tab-Dynamics">Dynamics</li>
+                    <li id="patchstorage-tab-Filter">Filter</li>
+                    <li id="patchstorage-tab-Generator">Generator</li>
+                    <li id="patchstorage-tab-MIDI">MIDI Utility</li>
+                    <li id="patchstorage-tab-Modulator">Modulator</li>
+                    <li id="patchstorage-tab-Reverb">Reverb</li>
+                    <li id="patchstorage-tab-Simulator">Simulator</li>
+                    <li id="patchstorage-tab-Spatial">Spatial</li>
+                    <li id="patchstorage-tab-Spectral">Spectral</li>
+                    <li id="patchstorage-tab-Utility">Utility</li>
+                    <!-- <li id="patchstorage-tab-MaxGen">Max&nbsp;gen~</li> -->
+                    <!-- <li id="patchstorage-tab-Camomile">Camomile</li> -->
+                </ul>
+            </div>
+
+            <div class="patchstorage-plugins clearfix js-patchstorage">
+              <div id="patchstorage-results-wrapper">
+					<h2>Filtered results</h2>
+                    <div id="patch-content-All" class="plugins-wrapper"></div>
+                    <div id="patch-content-ControlVoltage" class="plugins-wrapper"></div>
+                    <div id="patch-content-Delay" class="plugins-wrapper"></div>
+                    <div id="patch-content-Distortion" class="plugins-wrapper"></div>
+                    <div id="patch-content-Dynamics" class="plugins-wrapper"></div>
+                    <div id="patch-content-Filter" class="plugins-wrapper"></div>
+                    <div id="patch-content-Generator" class="plugins-wrapper"></div>
+                    <div id="patch-content-MIDI" class="plugins-wrapper"></div>
+                    <div id="patch-content-Modulator" class="plugins-wrapper"></div>
+                    <div id="patch-content-Reverb" class="plugins-wrapper"></div>
+                    <div id="patch-content-Simulator" class="plugins-wrapper"></div>
+                    <div id="patch-content-Spatial" class="plugins-wrapper"></div>
+                    <div id="patch-content-Spectral" class="plugins-wrapper"></div>
+                    <div id="patch-content-Utility" class="plugins-wrapper"></div>
+                    <!-- <div id="cloud-plugin-content-MaxGen" class="plugins-wrapper"></div> -->
+                    <!-- <div id="cloud-plugin-content-Camomile" class="plugins-wrapper"></div> -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <!-- END PATCHSTORAGE -->
+
     <!-- PEDALBOARDS LIBRARY -->
     <div id="pedalboards-library" class="mod-hidden mod-init-hidden">
         <div class="box clearfix">
@@ -809,7 +998,7 @@ $('document').ready(function() {
                 <div class="form-group">
                     <input id="searchPedalboard" class="form-control" maxlength="20" placeholder="Filter by keyword(s)" type="search" autocomplete="off" />
                 </div>
-                <a style="display:inline-block;float:right;color:#AAA;font-size:1.1em;margin-right:30px;"
+                <a id="mod-online-pedalboards" style="display:inline-block;float:right;color:#AAA;font-size:1.1em;margin-right:30px;"
                    href="http://pedalboards.moddevices.com/" target="_blank">
                     <img style="width: 1.2em; height: 1.2em; opacity: 0.6; vertical-align: middle;" src="img/icons/25/language.png" alt=""/>
                     <span style="vertical-align: middle;">Browse Online Pedalboards</span>
@@ -818,9 +1007,23 @@ $('document').ready(function() {
                   <i id="view-mode-grid" class="view-mode icon-th-1"></i>
                   <i id="view-mode-list" class="view-mode icon-th-list"></i>
                 </span>
-
             </header>
-            <div class="pedalboards clearfix js-pedalboards"></div>
+            <div class="pedalboards clearfix">
+                <div class="clearfix">
+                    {% if factory_pedalboards %}
+                    <span class="separator-title">User Pedalboards</span>
+                    <div class="separator separator-user"></div>
+                    {% end %}
+                    <div class="js-pedalboards js-user-pedalboards"></div>
+                </div>
+                {% if factory_pedalboards %}
+                <div class="clearfix">
+                    <span class="separator-title">Factory Pedalboards</span>
+                    <div class="separator separator-factory"></div>
+                    <div class="js-pedalboards js-factory-pedalboards"></div>
+                </div>
+                {% end %}
+            </div>
         </div>
     </div>
     <!-- END PEDALBOARDS LIBRARY -->
@@ -828,7 +1031,7 @@ $('document').ready(function() {
     <!-- BANK LIBRARY -->
     <div id="bank-library" class="mod-hidden mod-init-hidden"><div class="box">
         <header>
-            <h1 class="bottom top">Banks</h1>
+            <h1 class="bottom top">User Banks</h1>
         </header>
 
         <!-- BANK-LIST -->
@@ -842,8 +1045,25 @@ $('document').ready(function() {
         <div id="bank-edit">
             <div id="bank-title" class="mod-hidden">
                 <h1>Untitled</h1>
-	    </div>
+            </div>
             <div id="bank-pedalboards" class="grid-selected"></div>
+            <div id="bank-init" class="grid-selected" style="color:#ccc;margin-left:30px;">
+                {% if factory_pedalboards %}
+                <h2>
+                    This page is dedicated to user banks.<br>
+                    Factory banks are not displayed in this area.
+                </h2>
+                <p>
+                    To start using banks click on "Add Bank" on the left side,
+                    give it a name and then drag and drop pedalboards from the right side.
+                </p>
+                {% else %}
+                <h4>
+                    To start using banks click on "Add Bank" on the left side,
+                    give it a name and then drag and drop pedalboards from the right side.
+                </h4>
+                {% end %}
+            </div>
         </div>
         <!-- END BANK-PEDALBOARDS -->
 
@@ -853,7 +1073,7 @@ $('document').ready(function() {
             <div class="filter clearfix">
                 <div class="clearfix">
                     <div class="form-group">
-                        <label for="searchBank" >Select pedalboards</label>
+                        <label for="searchBank">Select pedalboards</label>
                         <input id="searchBank" class="form-control" maxlength="20" placeholder="Filter by keyword(s)" type="search" autocomplete="off" />
                     </div>
                 </div>
@@ -862,7 +1082,20 @@ $('document').ready(function() {
 
             <!-- BANK-PEDALBOARDS-RESULT -->
             <div id="bank-pedalboards-result">
-                <div class="js-canvas grid-selected"></div>
+                <div class="clearfix">
+                    {% if factory_pedalboards %}
+                    <span class="separator-title">User Pedalboards</span>
+                    <div class="separator separator-user"></div>
+                    {% end %}
+                    <div class="js-canvas js-user-pedalboards"></div>
+                </div>
+                {% if factory_pedalboards %}
+                <div class="clearfix">
+                    <span class="separator-title">Factory Pedalboards</span>
+                    <div class="separator separator-factory"></div>
+                    <div class="js-canvas js-factory-pedalboards"></div>
+                </div>
+                {% end %}
             </div>
             <!-- END BANK-PEDALBOARDS-RESULT -->
 

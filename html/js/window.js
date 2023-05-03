@@ -39,6 +39,11 @@ function WindowManager() {
             if (win != window && (forced || ! win.data('isMainWindow')) && !(win.selector === '#cloud-plugins-library' && window && window.hasClass('plugin-info'))) {
                 win.window('close')
             }
+            // HACK
+            // Close window if not current and forced or not main and current window is not plugin info modal opened from cloud-plugins-library tab
+            if (win != window && (forced || ! win.data('isMainWindow')) && !(win.selector === '#patchstorage-library' && window && window.hasClass('plugin-info'))) {
+                win.window('close')
+            }
         }
     }
 

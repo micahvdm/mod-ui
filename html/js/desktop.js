@@ -48,6 +48,8 @@ function Desktop(elements) {
         effectBoxTrigger: $('<div>'),
         cloudPluginBox: $('<div>'),
         cloudPluginBoxTrigger: $('<div>'),
+        patchstorageBox: $('<div>'),
+        patchstorageBoxTrigger: $('<div>'),
         pedalboardTrigger: $('<div>'),
         fileManagerBox: $('<div>'),
         fileManagerBoxTrigger: $('<div>'),
@@ -126,7 +128,7 @@ function Desktop(elements) {
             cache: false
         })
     };
-    this.getPedalboardHref = function(uri) {
+    this.getPedalboardHref = function(uri, unstable) {
         if (!this.pedalboardStatsSuccess) {
             return null;
         }
@@ -135,6 +137,9 @@ function Desktop(elements) {
             return null;
         }
         var encodedUri = encodeURIComponent(uri);
+        if (unstable) {
+            encodedUri += '&unstable=true';
+        }
         return PEDALBOARDS_URL + '/?plugin_uri=' + encodedUri;
     };
 
@@ -313,7 +318,7 @@ function Desktop(elements) {
                     allpedals[pedal.bundle] = pedal
                     self.pedalboardIndexer.add({
                         id: pedal.bundle,
-                        data: [pedal.bundle, pedal.title].join(" ")
+                        data: pedal.title
                     })
                 }
                 self.pedalboardIndexerData = allpedals
@@ -375,6 +380,7 @@ function Desktop(elements) {
         $('#wrapper').css('z-index', -1)
         $('#plugins-library').css('z-index', -1)
         $('#cloud-plugins-library').css('z-index', -1)
+        $('#patchstorage-library').css('z-index', -1)
         $('#pedalboards-library').css('z-index', -1)
         $('#bank-library').css('z-index', -1)
         $('#main-menu').css('z-index', -1)
@@ -736,6 +742,8 @@ function Desktop(elements) {
                                         elements.effectBoxTrigger)
     this.cloudPluginBox = self.makeCloudPluginBox(elements.cloudPluginBox,
                                                   elements.cloudPluginBoxTrigger)
+    this.patchstorageBox = self.makePatchstorageBox(elements.patchstorageBox,
+                                                  elements.patchstorageBoxTrigger)
     this.pedalboardBox = self.makePedalboardBox(elements.pedalboardBox,
                                                 elements.pedalboardBoxTrigger)
     this.bankBox = self.makeBankBox(elements.bankBox,
@@ -842,7 +850,7 @@ function Desktop(elements) {
         }
 
         $.ajax({
-            url: SITEURL + '/pedalboards/' + pedalboard_id,
+            url: startsWith(pedalboard_id, 'https://') ? pedalboard_id : (SITEURL + '/pedalboards/' + pedalboard_id),
             contentType: 'application/json',
             success: function (resp) {
                 if (!resp.data.stable && PREFERENCES['show-labs-plugins'] !== "true") {
@@ -883,8 +891,7 @@ function Desktop(elements) {
         })
     },
 
-    this.waitForScreenshot = function (generate, callback) {
-        var bundlepath = self.pedalboardBundle
+    this.waitForScreenshot = function (generate, bundlepath, callback) {
         pending_pedalboard_screenshots.push(bundlepath)
 
         if (generate) {
@@ -926,7 +933,7 @@ function Desktop(elements) {
                 success: function (result) {
                     if (result.ok) {
                         // dummy call to keep 1 ajax request active while screenshot is generated
-                        self.waitForScreenshot(false, function(){})
+                        self.waitForScreenshot(false, result.bundlepath, function(){})
                         // all set
                         callback(true, result.bundlepath, result.title)
                     } else {
@@ -1201,6 +1208,7 @@ function Desktop(elements) {
                     email      : data.email,
                     description: data.description,
                     title      : data.title,
+                    hidden     : data.hidden,
                 }),
                 success: function (resp) {
                     var transfer = new SimpleTransference('/pedalboard/pack_bundle/?bundlepath=' + escape(self.pedalboardBundle),
@@ -1277,6 +1285,7 @@ function Desktop(elements) {
     elements.pedalboardBoxTrigger.statusTooltip()
     elements.bankBoxTrigger.statusTooltip()
     elements.cloudPluginBoxTrigger.statusTooltip()
+    elements.patchstorageBoxTrigger.statusTooltip()
     elements.fileManagerBoxTrigger.statusTooltip()
 
     this.upgradeWindow = elements.upgradeWindow.upgradeWindow({
@@ -1487,6 +1496,10 @@ Desktop.prototype.makePedalboard = function (el, effectBox) {
                                            pluginData.microVersion,
                                            pluginData.release]
             self.effectBox.effectBox('showPluginInfo', pluginData)
+        },
+
+        showExternalUI: function (instance) {
+            ws.send(sprintf("show_external_ui %s", instance))
         },
 
         pluginParameterChange: function (port, value) {
@@ -1708,6 +1721,45 @@ Desktop.prototype.makeCloudPluginBox = function (el, trigger) {
     })
 }
 
+Desktop.prototype.makePatchstorageBox = function (el, trigger) {
+    var self = this
+    return el.patchstorageBox({
+        trigger: trigger,
+        windowManager: this.windowManager,
+        list: self.cloudPluginListFunction,
+        removePluginBundles: function (bundles, callback) {
+            if (!confirm('You are about to remove this plugin and any other in the same bundle. This may break pedalboards that depend on them.'))
+                return
+            self.previousPedalboardList = null
+            $.ajax({
+                url: '/package/uninstall',
+                data: JSON.stringify(bundles),
+                method: 'POST',
+                success: function(resp) {
+                    if (resp.ok) {
+                        callback(resp)
+                    } else {
+                        new Notification('error', "Could not uninstall bundle: " + resp.error)
+                    }
+                },
+                error: function () {
+                    new Notification('error', "Failed to uninstall plugin")
+                },
+                cache: false,
+                dataType: 'json'
+            })
+        },
+        upgradePluginURI: function (uri, usingLabs, callback) {
+            self.previousPedalboardList = null
+            self.installationQueue.installUsingURI(uri, usingLabs, callback)
+        },
+        installPluginURI: function (uri, usingLabs, callback) {
+            self.previousPedalboardList = null
+            self.installationQueue.installUsingURI(uri, usingLabs, callback)
+        }
+    })
+}
+
 Desktop.prototype.makeBankBox = function (el, trigger) {
     var self = this
     el.bankBox({
@@ -1737,7 +1789,29 @@ Desktop.prototype.makeBankBox = function (el, trigger) {
                 },
                 cache: false,
             })
-        }
+        },
+        copyFactoryPedalboard: function (bundlepath, title, callback) {
+            $.ajax({
+                url: '/pedalboard/factorycopy/',
+                data: {
+                    bundlepath: bundlepath,
+                    title: title,
+                },
+                success: function (resp) {
+                    if (resp) {
+                        self.previousPedalboardList = null
+                        new Notification('warning', 'Factory pedalboard was duplicated into the User Pedalboards Library')
+                        callback(resp)
+                    } else {
+                        new Bug("Could not copy factory pedalboard")
+                    }
+                },
+                error: function () {
+                    new Bug("Failed to copy factory pedalboard")
+                },
+                cache: false
+            })
+        },
     })
 }
 
@@ -1807,13 +1881,20 @@ Desktop.prototype.loadPedalboard = function (bundlepath, callback) {
             url: '/pedalboard/load_bundle/',
             type: 'POST',
             data: {
-                bundlepath: bundlepath
+                bundlepath: bundlepath,
+                isDefault: bundlepath == DEFAULT_PEDALBOARD ? '1' : '0'
             },
             success: function (resp) {
                 if (! resp.ok) {
                     callback(false)
                     return
                 }
+
+                if (bundlepath == DEFAULT_PEDALBOARD) {
+                    callback(true)
+                    return
+                }
+
                 self.title = resp.name
                 self.pedalboardBundle = bundlepath
                 self.pedalboardEmpty = false
@@ -1848,7 +1929,7 @@ Desktop.prototype.saveCurrentPedalboard = function (asNew, callback) {
                 return
             }
 
-            if (asNew || ! self.title) {
+            if (asNew || title || ! self.title) {
                 self.titleBox.removeClass("blend");
                 self.previousPedalboardList = null
             }

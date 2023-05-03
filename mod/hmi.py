@@ -44,6 +44,7 @@ from mod.mod_protocol import (
     CMD_DUOX_EXP_OVERCURRENT,
     CMD_RESPONSE,
     CMD_RESTORE,
+    CMD_SCREENSHOT,
     FLAG_CONTROL_MOMENTARY,
     FLAG_CONTROL_REVERSE,
     FLAG_CONTROL_TAP_TEMPO,
@@ -124,10 +125,12 @@ class HMI(object):
         ioloop = IOLoop.instance()
         try:
             sp = None
+            # pylint: disable=unexpected-keyword-arg
             try:
                 sp = serial.Serial(self.port, self.baud_rate, timeout=0, write_timeout=0)
             except:
                 sp = serial.Serial(self.port, self.baud_rate, timeout=0, writeTimeout=0)
+            # pylint: enable=unexpected-keyword-arg
             sp.flushInput()
             sp.flushOutput()
         except Exception as e:
@@ -326,24 +329,8 @@ class HMI(object):
 
         self.sp.write(msg.encode('utf-8') + b'\0')
 
-    def initial_state(self, bank_id, pedalboard_id, pedalboards, callback):
-        numPedals = len(pedalboards)
-
-        if numPedals <= 9 or pedalboard_id < 4:
-            startIndex = 0
-        elif pedalboard_id+4 >= numPedals:
-            startIndex = numPedals - 9
-        else:
-            startIndex = pedalboard_id - 4
-
-        endIndex = min(startIndex+9, numPedals)
-
-        data = '%s %d %d %d %d %d' % (CMD_INITIAL_STATE, numPedals, startIndex, endIndex, bank_id, pedalboard_id)
-
-        for i in range(startIndex, endIndex):
-            data += ' %s %d' % (normalize_for_hw(pedalboards[i]['title']), i+1)
-
-        self.send(data, callback)
+    def initial_state(self, data, callback):
+        self.send('{} {}'.format(CMD_INITIAL_STATE, data), callback)
 
     def ui_con(self, callback):
         self.send(CMD_GUI_CONNECTED, callback, 'boolean')
@@ -539,6 +526,9 @@ class HMI(object):
 
     def reset_eeprom(self, callback=None, datatype='int'):
         self.send(CMD_RESET_EEPROM, callback, datatype)
+
+    def screenshot(self, screen, callback=None, datatype='int'):
+        self.send('{} {} ignored'.format(CMD_SCREENSHOT, screen), callback, datatype)
 
     # FIXME this message should be generic, most likely
     def boot(self, bootdata, callback, datatype='int'):
