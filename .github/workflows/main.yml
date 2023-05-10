@@ -1,7 +1,0 @@
-      - uses: kentik/pkg@v1
-        with:
-          name: mod-ui-ps
-          version: 0.0.1
-          arch: aarch64, armv7
-          format: deb
-          package: package.yaml
