@@ -26,7 +26,7 @@ import time
 import tarfile
 
 try:
-    sys.modules['tornado'] = __import__('tornado4')
+    sys.modules['tornado'] = __import__('tornado')
 except ModuleNotFoundError:
     pass
 
