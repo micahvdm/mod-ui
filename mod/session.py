@@ -178,6 +178,16 @@ class Session(object):
 
     def web_set_sync_mode(self, mode, callback):
         self.host.set_sync_mode(mode, True, False, True, callback)
+        
+    # Set a plugin parameter via pi-stomp
+    # We use ":bypass" symbol for on/off state
+    def pi_stomp_parameter_set(self, port, value, callback):
+        instance, portsymbol = port.rsplit("/",1)
+        if portsymbol == ":bypass":
+            bvalue = value >= 0.5
+            self.host.bypass(instance, bvalue, callback)
+        else:
+            self.host.param_set(port, value, callback)
 
     # Connect 2 ports
     def web_connect(self, port_from, port_to, callback):
