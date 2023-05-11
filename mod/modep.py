@@ -2,7 +2,7 @@
 
 import sys
 
-sys.modules['tornado'] = __import__('tornado4')
+sys.modules['tornado'] = __import__('tornado')
 
 from mod import webserver
 webserver.run()
