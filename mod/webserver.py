@@ -1136,6 +1136,25 @@ class EffectParameterAddress(JsonRequestHandler):
                             steps, tempo, dividers, page, subpage, coloured, momentary, operational_mode)
 
         self.write(ok)
+        
+class EffectParameterSetPiStomp(JsonRequestHandler):
+    @web.asynchronous
+    @gen.engine
+
+    def post(self, port):
+        data = json.loads(self.request.body.decode("utf-8", errors="ignore"))
+        value   = float(data['value'])
+
+        ok = yield gen.Task(SESSION.pi_stomp_parameter_set, port, value)
+        self.write(ok)
+
+class EffectParameterGetPiStomp(JsonRequestHandler):
+    @web.asynchronous
+    @gen.engine
+
+    def get(self, port):
+        value = SESSION.host.pi_stomp_param_get(port)
+        self.write(value)
 
 class EffectPresetLoad(JsonRequestHandler):
     @web.asynchronous
@@ -2407,6 +2426,8 @@ application = web.Application(
             # plugin parameters
             (r"/effect/parameter/address/*(/[A-Za-z0-9_:/]+[^/])/?", EffectParameterAddress),
             (r"/effect/parameter/set/?", EffectParameterSet),
+            (r"/effect/parameter/pi_stomp_set/*(/[A-Za-z0-9_:/]+[^/])/?", EffectParameterSetPiStomp),
+            (r"/effect/parameter/pi_stomp_get/*(/[A-Za-z0-9_:/]+[^/])/?", EffectParameterGetPiStomp),
 
             # plugin presets
             (r"/effect/preset/load/*(/[A-Za-z0-9_/]+[^/])/?", EffectPresetLoad),
