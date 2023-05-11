@@ -4,7 +4,7 @@
 <!-- HEAD -->
 <head>
 <meta charset="UTF-8">
-<title>{% if blokas_enabled %}Pedalboard{% else %}MOD{% end %}</title>
+<title>{% if blokas_enabled %}pi-Stomp{% else %}MOD{% end %}</title>
 
 {% if blokas_enabled %}
 <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
@@ -272,13 +272,13 @@ $('document').ready(function() {
         $('#mod-settings').hide()
         $('#mod-status').hide()
         $('#mod-update').hide()
-        $('#blokas-update').show()
+        $('#blokas-update').hide()
         $('#blokas-update').statusTooltip()
         $('#blokas-update').statusTooltip('message', 'Check for Updates', true)
         $('#blokas-update').click(function () {
             do_blokas_update()
         })
-        do_blokas_update(true)
+        do_blokas_update(false)
 
         // disable all calls to domain moddevices.com
         $(document).ajaxSend(function (event, xhr, options) {
