@@ -2723,6 +2723,20 @@ class Host(object):
         self.send_modified("patch_set %d %s \"%s\"" % (instance_id, paramuri, str(value).replace('"','\\"')),
                            callback, datatype='boolean')
         return parameter is not None
+    
+    def pi_stomp_param_get(self, port):
+        instance, symbol = port.rsplit("/", 1)
+        instance_id = self.mapper.get_id_without_creating(instance)
+        pluginData  = self.plugins[instance_id]
+
+        if symbol == ":bypass":
+            return pluginData['bypassed']
+
+        if symbol in pluginData['designations']:
+            print("ERROR: Trying to modify a specially designated port '%s', stop!" % symbol)
+            return
+
+        return pluginData['ports'][symbol]
 
     def set_position(self, instance, x, y):
         instance_id = self.mapper.get_id_without_creating(instance)
