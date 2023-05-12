@@ -3073,7 +3073,7 @@ static void _clear_plugin_info_mini(const PluginInfo_Mini* const info)
     if (info->gui.thumbnail != nc)
         free((void*)info->gui.thumbnail);
 
-    patchstorage_free_info(&info->psInfo);
+    patchstorage_free_info(const_cast<patchstorage_info_t*>(&info->psInfo));
 
     delete info;
 }
