@@ -775,19 +775,19 @@ class APTCheck(JsonRequestHandler):
 
 class APTUpgrade(JsonRequestHandler):
     def is_update_running():
-        proc = subprocess.Popen(['systemctl', 'is-active', 'modep-update.service'], stdout=subprocess.PIPE, encoding='utf8')
+        proc = subprocess.Popen(['systemctl', 'is-active', 'mod-update.service'], stdout=subprocess.PIPE, encoding='utf8')
         line = proc.stdout.readline().strip()
         return line in ['active', 'activating']
 
     def is_update_failed():
-        proc = subprocess.run(['systemctl', '-q', 'is-failed', 'modep-update.service'])
+        proc = subprocess.run(['systemctl', '-q', 'is-failed', 'mod-update.service'])
         return proc.returncode == 0
 
     def get(self):
         error = False
 
         try:
-            open('/tmp/modep-update', 'a').close()
+            open('/tmp/mod-update', 'a').close()
             time.sleep(3)
             while APTUpgrade.is_update_running():
                 time.sleep(1)
