@@ -82,6 +82,7 @@ int patchstorage_read_info(patchstorage_info_t *info, const char *bundleuri)
             result = -EIO;
         }
     }
+    else result=-ENAMETOOLONG;
 
     return result;
 }
