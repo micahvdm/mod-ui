@@ -730,20 +730,20 @@ class UpdateBegin(JsonRequestHandler):
         IOLoop.instance().add_callback(start_restore)
         self.write(True)
 
-class APTCheck(JsonRequestHandler):
-    def get(self):
-        current = None
-        latest = None
+# class APTCheck(JsonRequestHandler):
+#     def get(self):
+#         current = None
+#         latest = None
 
-        try:
-            out = subprocess.Popen(['dpkg', '-s', BLOKAS_APT_PACKAGE], stdout=subprocess.PIPE, encoding='utf8')
-            while True:
-                line = out.stdout.readline()
-                if not line:
-                    break
-                if 'Version:' in line:
-                    current = line.replace('Version: ', '').strip()
-                    break
+#         try:
+#             out = subprocess.Popen(['dpkg', '-s', BLOKAS_APT_PACKAGE], stdout=subprocess.PIPE, encoding='utf8')
+#             while True:
+#                 line = out.stdout.readline()
+#                 if not line:
+#                     break
+#                 if 'Version:' in line:
+#                     current = line.replace('Version: ', '').strip()
+#                     break
         
         except Exception as err:
             logging.error(err)
@@ -2407,7 +2407,7 @@ application = web.Application(
             (r"/update/download/", UpdateDownload),
             (r"/update/begin", UpdateBegin),
 
-            (r"/apt/check", APTCheck),
+            #(r"/apt/check", APTCheck),
             (r"/apt/upgrade", APTUpgrade),
 
             (r"/controlchain/download/", ControlChainDownload),
