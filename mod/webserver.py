@@ -744,21 +744,21 @@ class UpdateBegin(JsonRequestHandler):
 #                 if 'Version:' in line:
 #                     current = line.replace('Version: ', '').strip()
 #                     break
-        
-        except Exception as err:
-            logging.error(err)
-
-        try:
-            data = json.loads(urllib.request.urlopen(BLOKAS_UPDATE_CHECK_URL).read())
-            latest = data.get('latest')
-
-        except Exception as err:
-            logging.error(err)        
-
-        self.write({
-            "current": current,
-            "latest": latest,
-        })
+#        
+#        except Exception as err:
+#            logging.error(err)
+#
+#        try:
+#            data = json.loads(urllib.request.urlopen(BLOKAS_UPDATE_CHECK_URL).read())
+#            latest = data.get('latest')
+#
+#        except Exception as err:
+#            logging.error(err)        
+#
+#        self.write({
+#            "current": current,
+#            "latest": latest,
+#        })
 
 class APTUpgrade(JsonRequestHandler):
     def is_update_running():
