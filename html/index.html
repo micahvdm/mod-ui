@@ -208,7 +208,7 @@ $('document').ready(function() {
                 url: '/apt/check',
                 success: function (resp) {
                     if (!resp.current) {
-                        if (!silent) { alert('Oops, something went wrong! 😔') }
+                        //if (!silent) { alert('Oops, something went wrong! 😔') }
                         return false
                     }
                     
@@ -239,7 +239,7 @@ $('document').ready(function() {
                         url: '/apt/upgrade',
                         success: function (resp) {
                             if (resp.error) {
-                                alert('Oops, something went wrong! 😔')
+                                //alert('Oops, something went wrong! 😔')
                                 location.reload()
                                 return
                             }
@@ -259,7 +259,7 @@ $('document').ready(function() {
                 },
                 error: function (xhr, status, error) {
                     console.log(error)
-                    alert('Oops, something went wrong! 😔')
+                    //alert('Oops, something went wrong! 😔')
                 },
                 cache: false,
                 dataType: 'json'
