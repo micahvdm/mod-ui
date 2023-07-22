@@ -1334,7 +1334,7 @@ class ServerWebSocket(websocket.WebSocketHandler):
 
         elif cmd == "transport-bpm":
             bpm = float(data[1])
-            SESSION.host.set_transport_bpm(bpm, True, False, True, False)
+            SESSION.host.set_transport_bpm(bpm, True, True, False, False)
 
         elif cmd == "transport-rolling":
             rolling = bool(int(data[1]))
