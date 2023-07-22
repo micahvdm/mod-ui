@@ -1334,7 +1334,7 @@ class ServerWebSocket(websocket.WebSocketHandler):
 
         elif cmd == "transport-bpm":
             bpm = float(data[1])
-            SESSION.host.set_transport_bpm(bpm, True, True, False, False)
+            SESSION.host.set_transport_bpm(bpm, True, False, True, False)
 
         elif cmd == "transport-rolling":
             rolling = bool(int(data[1]))
@@ -2081,6 +2081,15 @@ class SwitchCpuFreq(JsonRequestHandler):
                 fh.write(freqs[index])
         self.write(True)
 
+class SetBpm(JsonRequestHandler):
+    @web.asynchronous
+    @gen.engine
+    def post(self):
+        data = json.loads(self.request.body.decode("utf-8", errors="ignore"))
+        value = float(data['value'])
+        ok = yield gen.Task(SESSION.host.set_transport_bpm, value, True, False, True, False)
+        self.write(ok)
+
 class SaveSingleConfigValue(JsonRequestHandler):
     def post(self):
         key   = self.get_argument("key")
@@ -2479,6 +2488,7 @@ application = web.Application(
             (r"/set_buffersize/(128|256)", SetBufferSize),
             (r"/reset_xruns/", ResetXruns),
             (r"/switch_cpu_freq/", SwitchCpuFreq),
+            (r"/set_bpm", SetBpm),
 
             (r"/save_user_id/", SaveUserId),
 
