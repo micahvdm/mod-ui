@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToneHunt</title>
+  <!-- Include JSZip library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+</head>
+<body>
+  <h1>ToneHunt Website</h1>
+  <iframe id="toneHuntFrame" src="https://www.tonehunt.org" width="100%" height="500"></iframe>
+
+  <script>
+    // Function to handle downloads
+    function handleDownload(url) {
+      // Example: Replace '/path/to/temp' with the actual path to the temporary folder
+      const tempFolder = '/home/pistomp/.tmp'; // Temporary folder
+      // Example: Replace '/path/to/destination_nam' with the actual path to the destination folder for .nam files
+      const destinationFolderNAM = '/home/pistomp/data/user-data/'; // Destination folder for .nam files
+      // Example: Replace '/path/to/destination_wav' with the actual path to the destination folder for .wav files
+      const destinationFolderWAV = '/home/pistomp/data/user-data/'; // Destination folder for .wav files
+      
+      // Create an anchor element to trigger the download
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      
+      // Extract filename from the URL
+      const filename = url.split('/').pop();
+      
+      // Set the download attribute to specify filename and temporary folder
+      anchor.setAttribute('download', `${tempFolder}/${filename}`);
+      
+      // Append the anchor to the body and trigger a click event
+      document.body.appendChild(anchor);
+      anchor.click();
+      
+      // Clean up: Remove the anchor after download starts
+      document.body.removeChild(anchor);
+
+      // Check if the downloaded file is a zip
+      if (filename.endsWith('.zip')) {
+        extractZipFile(`${tempFolder}/${filename}`, tempFolder)
+          .then(() => {
+            moveFilesByExtension(tempFolder, destinationFolderNAM, 'nam');
+            moveFilesByExtension(tempFolder, destinationFolderWAV, 'wav');
+            // Remove the zip file after extraction
+            removeFile(`${tempFolder}/${filename}`);
+          })
+          .catch(error => console.error('Error handling zip:', error));
+      }
+    }
+
+    // Function to extract zip files and move them to the specified path
+    function extractZipFile(zipPath, destinationFolder) {
+      return fetch(zipPath)
+        .then(response => response.blob())
+        .then(zipBlob => {
+          // Create a new JSZip instance
+          const zip = new JSZip();
+          // Load the zip file
+          return zip.loadAsync(zipBlob);
+        })
+        .then(zip => {
+          // Extract the zip file to the temporary folder
+          return Promise.all(Object.keys(zip.files).map(async filename => {
+            const fileData = await zip.files[filename].async('blob');
+            // Move the extracted file to the temporary folder
+            return moveFile(fileData, `${destinationFolder}/${filename}`);
+          }));
+        });
+    }
+
+    // Function to move files with a specific extension to a destination folder
+    function moveFilesByExtension(sourceFolder, destinationFolder, extension) {
+      // Fetch all files in the source folder
+      return fetch(`${sourceFolder}/*`)
+        .then(response => response.blob())
+        .then(files => {
+          // Filter files by extension
+          const filteredFiles = files.filter(file => file.name.endsWith(`.${extension}`));
+          // Move each filtered file to the destination folder
+          return Promise.all(filteredFiles.map(file => moveFile(file, `${destinationFolder}/${file.name}`)));
+        });
+    }
+
+    // Function to remove a file
+    function removeFile(filePath) {
+      // Send a DELETE request to remove the file
+      return fetch(filePath, { method: 'DELETE' })
+        .then(response => {
+          if (response.ok) {
+            console.log('File removed successfully');
+          } else {
+            console.error('Error removing file:', response.statusText);
+          }
+        })
+        .catch(error => console.error('Error removing file:', error));
+    }
+
+    // Function to move a file to a new location
+    function moveFile(fileData, destination) {
+      return fetch(fileData)
+        .then(response => response.blob())
+        .then(blob => {
+          // Create a new FormData object
+          const formData = new FormData();
+          // Append the file blob to the FormData object with the specified filename
+          formData.append('file', blob, destination);
+          // Send a POST request to move the file to the destination
+          return fetch('/move-file', {
+            method: 'POST',
+            body: formData
+          });
+        })
+        .then(response => {
+          if (response.ok) {
+            console.log('File moved successfully');
+          } else {
+            console.error('Error moving file:', response.statusText);
+          }
+        })
+        .catch(error => console.error('Error moving file:', error));
+    }
+
+    // Function to save user credentials to localStorage
+    function saveCredentials(username, password) {
+      localStorage.setItem('username', username);
+      localStorage.setItem('password', password);
+    }
+
+    // Function to retrieve saved user credentials from localStorage
+    function getSavedCredentials() {
+      const username = localStorage.getItem('username');
+      const password = localStorage.getItem('password');
+      return { username, password };
+    }
+
+    // Listen for login events from the iframe
+    window.addEventListener('message', function(event) {
+      if (event.data.type === 'login') {
+        const { username, password } = event.data.credentials;
+        saveCredentials(username, password);
+      }
+    });
+
+    // Automatically fill in saved credentials if available
+    window.addEventListener('load', function() {
+      const savedCredentials = getSavedCredentials();
+      if (savedCredentials.username && savedCredentials.password) {
+        const loginScript = `
+          document.getElementById('username').value = '${savedCredentials.username}';
+          document.getElementById('password').value = '${savedCredentials.password}';
+          document.getElementById('loginForm').submit();
+        `;
+        document.getElementById('toneHuntFrame').contentWindow.postMessage({ type: 'executeScript', script: loginScript }, '*');
+      }
+    });
+  </script>
+</body>
+</html>
