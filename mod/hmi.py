@@ -433,7 +433,7 @@ class HMI(object):
 
     def control_set(self, hw_id, value, callback):
         """Set a plug-in's control port value on the HMI."""
-        # control_set <hw_id> <value>"""
+        # control_set <hw_id> <value>
         self.send('%s %d %f' % (CMD_CONTROL_SET, hw_id, value), callback, 'boolean')
 
     def control_rm(self, hw_ids, callback):
