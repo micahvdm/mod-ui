@@ -329,7 +329,7 @@ class Host(object):
         self.tuner_resolution = self.descriptor.get('tuner_resolution', 16)
 
         self.current_tuner_port = self.prefs.get("tuner-input-port", 1, int)
-        self.current_tuner_mute = self.prefs.get("tuner-mutes-outputs", False, bool)
+        self.current_tuner_mute = self.prefs.get("tuner-mutes-outputs", True, bool)
         self.current_tuner_ref_freq = self.prefs.get("tuner-reference-frequency", 440, int)
 
         if self.descriptor.get('factory_pedalboards', False):
