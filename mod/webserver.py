@@ -1164,20 +1164,20 @@ class TunerPiStomp(JsonRequestHandler):
         self.write(SESSION.hmi.tuner('%s %f %s %f' % (freq, note, cents), callback))
 
 class TunerOnPiStomp(JsonRequestHandler):
-    def get(self):
-        SESSION.host.hmi_tuner_on()
-        self.write(True)
+    def post(self):
+        ok = SESSION.host.hmi_tuner_on(True)
+        self.write(ok)
 
 class TunerOffPiStomp(JsonRequestHandler):
-    def get(self):
-        SESSION.host.hmi_tuner_off()
-        self.write(True)
+    def post(self):
+        ok = SESSION.host.hmi_tuner_off(True)
+        self.write(ok)
 
 class TunerRefGetPiStomp(JsonRequestHandler):
     @web.asynchronous
     @gen.engine
 
-    def get(self, input_freq):
+    def get(self, freq):
         value = SESSION.host.hmi_tuner_ref_freq(freq)
         self.write(value)
 
