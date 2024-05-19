@@ -1156,6 +1156,61 @@ class EffectParameterGetPiStomp(JsonRequestHandler):
         value = SESSION.host.pi_stomp_param_get(port)
         self.write(value)
 
+class TunerPiStomp(JsonRequestHandler):
+    @web.asynchronous
+    @gen.engine
+
+    def get(self, freq, note, cents, callback):
+        self.write(SESSION.hmi.tuner('%s %f %s %f' % (freq, note, cents), callback))
+
+class TunerOnPiStomp(JsonRequestHandler):
+    def get(self):
+        SESSION.host.hmi_tuner_on()
+        self.write(True)
+
+class TunerOffPiStomp(JsonRequestHandler):
+    def get(self):
+        SESSION.host.hmi_tuner_off()
+        self.write(True)
+
+class TunerRefGetPiStomp(JsonRequestHandler):
+    @web.asynchronous
+    @gen.engine
+
+    def get(self, input_freq):
+        value = SESSION.host.hmi_tuner_ref_freq(freq)
+        self.write(value)
+
+class TunerRefSetPiStomp(JsonRequestHandler):
+    @web.asynchronous
+    @gen.engine
+
+    def post(self, freq):
+        data = json.loads(self.request.body.decode("utf-8", errors="ignore"))
+        value   = float(data['value'])
+
+        ok = yield gen.Task(SESSION.host.hmi_tuner_ref_freq, freq, value)
+        self.write(ok)
+
+class TunerInputGetPiStomp(JsonRequestHandler):
+    @web.asynchronous
+    @gen.engine
+
+    def get(self, input_port):
+        value = SESSION.host.hmi_tuner_input(input_port)
+        self.write(value)
+
+class TunerInputSetPiStomp(JsonRequestHandler):
+    @web.asynchronous
+    @gen.engine
+
+    def post(self, input_port):
+        data = json.loads(self.request.body.decode("utf-8", errors="ignore"))
+        value   = int(data['value'])
+
+        ok = yield gen.Task(SESSION.host.hmi_tuner_input, input_port, value)
+        self.write(ok)
+
 class EffectPresetLoad(JsonRequestHandler):
     @web.asynchronous
     @gen.engine
@@ -2523,6 +2578,13 @@ application = web.Application(
             (r"/reset_xruns/", ResetXruns),
             (r"/switch_cpu_freq/", SwitchCpuFreq),
             (r"/set_bpm", SetBpm),
+            (r"/tuner/freq/*(/[A-Za-z0-9_:/]+[^/])/?", TunerPiStomp),
+            (r"/tuner/on/(true|false)", TunerOnPiStomp),
+            (r"/tuner/off/(true|false)", TunerOffPiStomp),
+            (r"/tuner/input_get/(1|2)", TunerInputGetPiStomp),
+            (r"/tuner/input_set/(1|2)", TunerInputSetPiStomp),
+            (r"/tuner/ref_get/*(/[A-Za-z0-9_:/]+[^/])/?", TunerRefGetPiStomp),
+            (r"/tuner/ref_set/*(/[A-Za-z0-9_:/]+[^/])/?", TunerRefSetPiStomp),
 
             (r"/save_user_id/", SaveUserId),
 
