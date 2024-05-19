@@ -6272,6 +6272,74 @@ _:b%i
 
         callback(True)
 
+    def pistomp_tuner_on(self, callback):
+        logging.debug("pistomp tuner on")
+
+        def operation_failed(ok):
+            callback(False)
+
+        def monitor_added(ok):
+            port = self.hw_tuner_input_port(self.current_tuner_port)
+            if not ok or not connect_jack_ports("system:capture_%d" % port,
+                                                "effect_%d:%s" % (TUNER_INSTANCE_ID, TUNER_INPUT_PORT)):
+                self.send_notmodified("remove %d" % TUNER_INSTANCE_ID, operation_failed)
+                return
+
+            #if self.current_tuner_mute:
+            #    self.mute()
+            self.mute()
+
+            callback(True)
+
+        def tuner_added(resp):
+            if resp not in (0, -2, TUNER_INSTANCE_ID): # -2 means already loaded
+                callback(False)
+                return
+            self.send_notmodified("monitor_output %d %s" % (TUNER_INSTANCE_ID, TUNER_MONITOR_PORT), monitor_added)
+
+        self.send_notmodified("add %s %d" % (TUNER_URI, TUNER_INSTANCE_ID), tuner_added)
+
+    def hmi_tuner_off(self, callback):
+        logging.debug("hmi tuner off")
+
+        def tuner_removed(_):
+            #if self.current_tuner_mute:
+            #    self.unmute()
+            self.unmute()
+            callback(True)
+
+        self.send_notmodified("remove %d" % TUNER_INSTANCE_ID, tuner_removed)
+
+    def pistomp_tuner_input(self, input_port, callback):
+        logging.debug("pistomp tuner input")
+
+        if input_port not in (1,2):
+            callback(False)
+            return
+
+        hw_old_port = self.hw_tuner_input_port(self.current_tuner_port)
+        hw_new_port = self.hw_tuner_input_port(input_port)
+
+        self.current_tuner_port = input_port
+
+        disconnect_jack_ports("system:capture_%s" % hw_old_port,
+                              "effect_%d:%s" % (TUNER_INSTANCE_ID, TUNER_INPUT_PORT))
+
+        connect_jack_ports("system:capture_%s" % hw_new_port,
+                           "effect_%d:%s" % (TUNER_INSTANCE_ID, TUNER_INPUT_PORT))
+
+        callback(True)
+
+        if self.descriptor.get('tuner_input_save', False):
+            self.prefs.setAndSave("tuner-input-port", input_port, False)
+
+    def pistomp_tuner_ref_freq(self, freq, callback):
+        logging.debug("pistomp tuner ref freq")
+
+        self.current_tuner_ref_freq = freq
+        self.send_notmodified("param_set %d REFFREQ %d" % (TUNER_INSTANCE_ID, freq), callback)
+        self.prefs.setAndSave("tuner-reference-frequency", freq, False)
+
     def hmi_tuner_on(self, callback):
         logging.debug("hmi tuner on")
 
