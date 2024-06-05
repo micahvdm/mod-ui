@@ -1778,8 +1778,13 @@ class SnapshotList(JsonRequestHandler):
 
 class SnapshotName(JsonRequestHandler):
     def get(self):
-        idx  = int(self.get_argument('id'))
-        name = SESSION.host.snapshot_name(idx) or DEFAULT_SNAPSHOT_NAME
+        arg = self.get_argument('id')
+        name = ""
+        if arg == "current":
+            name = SESSION.host.snapshot_name()
+        else:
+            idx  = int(arg)
+            name = SESSION.host.snapshot_name(idx) or DEFAULT_SNAPSHOT_NAME
         self.write({
             'ok'  : bool(name),
             'name': name
