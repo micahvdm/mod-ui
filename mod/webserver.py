@@ -2129,6 +2129,14 @@ class SetBpm(JsonRequestHandler):
         ok = yield gen.Task(SESSION.host.set_transport_bpm, value, True, False, True, False)
         self.write(ok)
 
+class GetBpm(JsonRequestHandler):
+    @web.asynchronous
+    @gen.engine
+
+    def get(self):
+        value = SESSION.host.get_transport_bpm()
+        self.write(value)
+
 class SaveSingleConfigValue(JsonRequestHandler):
     def post(self):
         key   = self.get_argument("key")
@@ -2528,6 +2536,7 @@ application = web.Application(
             (r"/reset_xruns/", ResetXruns),
             (r"/switch_cpu_freq/", SwitchCpuFreq),
             (r"/set_bpm", SetBpm),
+            (r"/get_bpm", GetBpm),
 
             (r"/save_user_id/", SaveUserId),
 

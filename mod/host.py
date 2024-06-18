@@ -4686,6 +4686,8 @@ _:b%i
             self.send_modified("transport %i %f %f" % (self.transport_rolling,
                                                        self.transport_bpb,
                                                        self.transport_bpm), callback, datatype)
+    def get_transport_bpm(self):
+        return self.transport_bpm
 
     @gen.coroutine
     def set_transport_rolling(self, rolling, sendHost, sendHMI, sendWeb, sendHMIAddressing, callback=None, datatype='int'):
