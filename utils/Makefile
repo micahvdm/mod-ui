@@ -67,7 +67,7 @@ build: libmod_utils$(LIB_EXT)
 clean:
 	rm -f *.dll *.dylib *.so *.o sha1/*.o
 
-libmod_utils$(LIB_EXT): utils_jack.cpp.o utils_lilv.cpp.o sha1/sha1.c.o
+libmod_utils$(LIB_EXT): utils_jack.cpp.o utils_lilv.cpp.o patchstorage.cpp.o sha1/sha1.c.o
 	$(CXX) $^ $(LDFLAGS) $(ALSA_LIBS) $(JACK_LIBS) $(LILV_LIBS) -shared -o $@
 
 sha1/sha1.c.o: sha1/sha1.c
@@ -76,13 +76,13 @@ sha1/sha1.c.o: sha1/sha1.c
 utils_jack.cpp.o: utils_jack.cpp utils.h
 	$(CXX) $< $(CXXFLAGS) $(ALSA_CFLAGS) $(JACK_CFLAGS) -c -o $@
 
-utils_lilv.cpp.o: utils_lilv.cpp sha1/sha1.h utils.h
+utils_lilv.cpp.o: utils_lilv.cpp sha1/sha1.h utils.h patchstorage.h
 	$(CXX) $< $(CXXFLAGS) $(LILV_CFLAGS) -c -o $@
 
 test.cpp.o: test.cpp utils.h
 	$(CXX) $< $(CXXFLAGS) -c -o $@
 
-test: utils_jack.cpp.o utils_lilv.cpp.o test.cpp.o sha1/sha1.c.o
+test: utils_jack.cpp.o utils_lilv.cpp.o test.cpp.o patchstorage.cpp.o sha1/sha1.c.o
 	$(CXX) $^ $(LDFLAGS) $(ALSA_LIBS) $(JACK_LIBS) $(LILV_LIBS) -o $@
 
 test-run: test
