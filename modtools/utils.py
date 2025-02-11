@@ -6,6 +6,7 @@ import os
 import json
 from ctypes import *
 from mod import get_unique_name
+from sys import platform
 
 # ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes c_char_p into a python string
@@ -159,13 +160,21 @@ def unionToDict(struct):
 
 # ------------------------------------------------------------------------------------------------------------
 
-tryPath1 = os.path.join(os.path.dirname(__file__), "libmod_utils.so")
-tryPath2 = os.path.join(os.path.dirname(__file__), "..", "utils", "libmod_utils.so")
+if platform == 'win32':
+    ext = "dll"
+else:
+    ext = "so"
+
+tryPath1 = os.path.join(os.path.dirname(__file__), "libmod_utils." + ext)
+tryPath2 = os.path.join(os.path.dirname(__file__), "..", "lib", "libmod_utils." + ext)
+tryPath3 = os.path.join(os.path.dirname(__file__), "..", "utils", "libmod_utils." + ext)
 
 if os.path.exists(tryPath1):
     utils = cdll.LoadLibrary(tryPath1)
-else:
+elif os.path.exists(tryPath2):
     utils = cdll.LoadLibrary(tryPath2)
+else:
+    utils = cdll.LoadLibrary(tryPath3)
 
 # PluginLicenseType
 kPluginLicenseNonCommercial = 0
@@ -624,9 +633,6 @@ utils.list_plugins_in_bundle.restype  = POINTER(c_char_p)
 utils.file_uri_parse.argtypes = (c_char_p,)
 utils.file_uri_parse.restype  = c_char_p
 
-utils.set_cpu_affinity.argtypes = (c_int,)
-utils.set_cpu_affinity.restype  = None
-
 utils.init_jack.argtypes = None
 utils.init_jack.restype  = c_bool
 
@@ -928,12 +934,6 @@ def get_bundle_dirname(bundleuri):
         bundle = os.path.dirname(bundle)
 
     return bundle
-
-# ------------------------------------------------------------------------------------------------------------
-# helper utilities
-
-def set_cpu_affinity(cpu):
-    utils.set_cpu_affinity(cpu)
 
 # ------------------------------------------------------------------------------------------------------------
 # jack stuff

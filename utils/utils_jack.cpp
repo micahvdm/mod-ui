@@ -38,8 +38,8 @@
 #define ALSA_CONTROL_SPDIF_ENABLE  "SPDIF Enable"
 #define ALSA_CONTROL_MASTER_VOLUME "DAC"
 
-#define JACK_SLAVE_PREFIX     "mod-slave"
-#define JACK_SLAVE_PREFIX_LEN 9
+#define JACK_EXTERNAL_PREFIX     "mod-external"
+#define JACK_EXTERNAL_PREFIX_LEN 12
 
 // --------------------------------------------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ static void JackPortRegistration(jack_port_id_t port_id, int reg, void*)
         if (const char* const port_name = jack_port_name(port))
         {
             if (strncmp(port_name, "system:midi_", 12) != 0 &&
-                strncmp(port_name, JACK_SLAVE_PREFIX ":", JACK_SLAVE_PREFIX_LEN + 1) != 0 &&
+                strncmp(port_name, JACK_EXTERNAL_PREFIX ":", JACK_EXTERNAL_PREFIX_LEN + 1) != 0 &&
                 strncmp(port_name, "nooice", 5) != 0)
                 return;
 
@@ -213,8 +213,16 @@ bool init_jack(void)
         return true;
     }
 
+#ifdef _MOD_DESKTOP
+    const jack_options_t options = static_cast<jack_options_t>(JackNoStartServer|JackUseExactName|JackServerName);
+    const char* servername = std::getenv("MOD_DESKTOP_SERVER_NAME");
+    if (servername == nullptr)
+        servername = "mod-desktop";
+    jack_client_t* const client = jack_client_open("mod-ui", options, nullptr, servername);
+#else
     const jack_options_t options = static_cast<jack_options_t>(JackNoStartServer|JackUseExactName);
     jack_client_t* const client = jack_client_open("mod-ui", options, nullptr);
+#endif
 
     if (client == nullptr)
         return false;

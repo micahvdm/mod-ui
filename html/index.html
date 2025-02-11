@@ -94,6 +94,10 @@
         console.log = function() {}
     }
 
+    var CLOUD_TERMS_ACCEPTED = PREFERENCES['cloud-terms-accepted'] === "true";
+    var USING_MOD_DESKTOP = {{using_desktop}};
+    var USING_MOD_DEVICE = {{using_mod}} && !{{using_desktop}};
+
     /*
     var INFO = {
         "hardware": {},
@@ -174,25 +178,17 @@ $('document').ready(function() {
         $('#mod-bypassRight').hide()
     }
 
-    if ({{using_app}}) {
-        desktop.setupApp()
-    }
-
-    if ({{using_mod}}) {
-        desktop.authenticateDevice(function (ok) {
-            if (ok) {
-                console.log("MOD authentication succeeded")
-                desktop.resetPedalboardStats();
-            } else {
-                console.log("MOD authentication failed")
-                desktop.upgradeWindow.upgradeWindow('setErrored')
-            }
-        })
+    if (USING_MOD_DEVICE) {
+        if (CLOUD_TERMS_ACCEPTED) {
+            desktop.setupDeviceAuthentication()
+        }
     } else {
         desktop.upgradeWindow.upgradeWindow('setErrored')
 
+        // hide stuff that is only relevant to MOD Devices
         $('#mod-bypassLeft').hide()
         $('#mod-bypassRight').hide()
+        $('#mod-cloud-plugins').hide()
         $('#mod-update').hide()
         $('#pedalboard-info').find('.js-cloud').hide()
 
@@ -305,6 +301,14 @@ $('document').ready(function() {
         $("#cloud-plugins-source").parent().show()
     }
     desktop.pedalboardBox.pedalboardBox('initViewMode', PREFERENCES['pb-view-mode'])
+
+    if ({{using_desktop}}) {
+        desktop.setupApp()
+    } else {
+        if (PREFERENCES['dev-mode'] == "on") {
+            enable_dev_mode(true)
+        }
+    }
 
     // start code for ajax loading bar
 
@@ -613,7 +617,7 @@ $('document').ready(function() {
                     <button class="js-reset">New Pedalboard</button>
                     <button class="js-save">Save</button>
                     <button class="js-save-as">Save as</button>
-                    <button class="js-cloud">Share</button>
+                    <button class="js-cloud mod-hidden">Share</button>
                 </div>
             </div>
             <!-- END PEDALBOARD-SETTINGS -->
@@ -997,7 +1001,7 @@ $('document').ready(function() {
                 <div class="form-group">
                     <input id="searchPedalboard" class="form-control" maxlength="20" placeholder="Filter by keyword(s)" type="search" autocomplete="off" />
                 </div>
-                <a id="mod-online-pedalboards" style="display:inline-block;float:right;color:#AAA;font-size:1.1em;margin-right:30px;"
+                <a style="display:inline-block;float:right;color:#AAA;font-size:1.1em;margin-right:30px;"
                    href="http://pedalboards.moddevices.com/" target="_blank">
                     <img style="width: 1.2em; height: 1.2em; opacity: 0.6; vertical-align: middle;" src="img/icons/25/language.png" alt=""/>
                     <span style="vertical-align: middle;">Browse Online Pedalboards</span>

@@ -27,7 +27,11 @@ extern "C" {
 #include <stdint.h>
 #endif
 
+#ifdef _WIN32
+#define MOD_API __declspec (dllexport)
+#else
 #define MOD_API __attribute__ ((visibility("default")))
+#endif
 
 typedef enum {
     kPluginLicenseNonCommercial = 0,
@@ -440,9 +444,6 @@ MOD_API const char* const* list_plugins_in_bundle(const char* bundle);
 
 // Convert a file URI to a local path string.
 MOD_API const char* file_uri_parse(const char* fileuri);
-
-// helper utilities
-MOD_API void set_cpu_affinity(int cpu);
 
 // jack stuff
 MOD_API bool init_jack(void);
