@@ -3028,6 +3028,8 @@ class Host(object):
                 "parameters": dict((k,v.copy()) for k,v in pluginData['parameters'].items()),
                 "ports"     : pluginData['ports'].copy(),
                 "preset"    : pluginData['preset'],
+                "bpm"       : self.transport_bpm,
+                "bpb"       : self.transport_bpb,
             }
 
         return snapshot
@@ -3139,6 +3141,8 @@ class Host(object):
             diffBypass = (self.should_save_addressing_value(addressing, pluginData['bypassed']) and
                           pluginData['bypassed'] != data['bypassed'])
             diffPreset = data['preset'] and data['preset'] != pluginData['preset']
+            diffBpm = data['bpm'] and data['bpm'] != self.transport_bpm
+            diffBpb = data['bpb'] and data['bpb'] != self.transport_bpb
 
             if was_aborted or diffBypass:
                 if addressing is not None:
@@ -3151,6 +3155,21 @@ class Host(object):
                 self.msg_callback("param_set %s :bypass 1.0" % (instance,))
                 try:
                     yield gen.Task(self.bypass, instance, True)
+                except Exception as e:
+                    logging.exception(e)
+                    continue
+
+            # if bpm changed, do it now
+            if diffBpm:
+                try:
+                    self.set_transport_bpm(data['bpm'], True, False, True, False)
+                except Exception as e:
+                    logging.exception(e)
+
+            # if bpm changed, do it now
+            if diffBpb:
+                try:
+                    self.set_transport_bpb(data['bpb'], True, False, True, False)
                 except Exception as e:
                     logging.exception(e)
 
@@ -3238,6 +3257,8 @@ class Host(object):
             skippedPort = (PEDALBOARD_INSTANCE_ID, ":presets")
 
         self.addressings.load_current(used_actuators, skippedPort, True, from_hmi, abort_catcher)
+
+
 
         if not is_hmi_snapshot:
             name = self.snapshot_name() or DEFAULT_SNAPSHOT_NAME
