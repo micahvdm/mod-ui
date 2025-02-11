@@ -79,6 +79,9 @@ utils_jack.cpp.o: utils_jack.cpp utils.h
 utils_lilv.cpp.o: utils_lilv.cpp sha1/sha1.h utils.h patchstorage.h
 	$(CXX) $< $(CXXFLAGS) $(LILV_CFLAGS) -c -o $@
 
+patchstorage.cpp.o: patchstorage.cpp patchstorage.h
+	$(CXX) $< $(CXXFLAGS) $(shell pkg-config --cflags lilv-0) -c -o $@
+
 test.cpp.o: test.cpp utils.h
 	$(CXX) $< $(CXXFLAGS) -c -o $@
 
