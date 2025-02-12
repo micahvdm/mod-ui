@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html class="{% if blokas_enabled %}blokas{% end %}">
+<html class="{% if pistomp_enabled %}pistomp{% end %}">
 
 <!-- HEAD -->
 <head>
 <meta charset="UTF-8">
-<title>{% if blokas_enabled %}pi-Stomp{% else %}MOD{% end %}</title>
+<title>{% if pistomp_enabled %}pi-Stomp{% else %}MOD{% end %}</title>
 
-{% if blokas_enabled %}
+{% if pistomp_enabled %}
 <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
 <meta name="apple-mobile-web-app-capable" content="yes">
 {% else %}
@@ -70,7 +70,7 @@
     PATCHSTORAGE_API_URL = '{{patchstorage_api_url}}'
     PATCHSTORAGE_PLATFORM_ID = '{{patchstorage_platform_id}}'
     PATCHSTORAGE_TARGET_ID = '{{patchstorage_target_id}}'
-    BLOKAS_ENABLED = '{{blokas_enabled}}'
+    PISTOMP_ENABLED = '{{pistomp_enabled}}'
     PLUGINS_URL      = '{{plugins_url}}'
     PEDALBOARDS_URL  = '{{pedalboards_url}}'
     PEDALBOARDS_LABS_URL  = '{{pedalboards_labs_url}}'
@@ -197,9 +197,9 @@ $('document').ready(function() {
         $('#mod-status').show().statusTooltip('updatePosition')
     }
 
-    if ({{blokas_enabled}}) {
+    if ({{pistomp_enabled}}) {
 
-        function do_blokas_update(silent = false) {
+        function do_pistomp_update(silent = false) {
             $.ajax({
                 type: 'GET',
                 url: '/apt/check',
@@ -220,10 +220,10 @@ $('document').ready(function() {
                     }
 
                     if (silent) {
-                        $('#blokas-update').statusTooltip('message', 'Update Available', true)
-                        $('#blokas-update').mouseover();
+                        $('#pistomp-update').statusTooltip('message', 'Update Available', true)
+                        $('#pistomp-update').mouseover();
                         setTimeout(function () {
-                            $('#blokas-update').mouseleave();
+                            $('#pistomp-update').mouseleave();
                         }, 10000)
                         return true
                     }
@@ -269,13 +269,13 @@ $('document').ready(function() {
         $('#mod-settings').hide()
         $('#mod-status').hide()
         $('#mod-update').hide()
-        $('#blokas-update').hide()
-        $('#blokas-update').statusTooltip()
-        $('#blokas-update').statusTooltip('message', 'Check for Updates', true)
-        $('#blokas-update').click(function () {
-            do_blokas_update()
+        $('#pistomp-update').hide()
+        $('#pistomp-update').statusTooltip()
+        $('#pistomp-update').statusTooltip('message', 'Check for Updates', true)
+        $('#pistomp-update').click(function () {
+            do_pistomp_update()
         })
-        do_blokas_update(false)
+        do_pistomp_update(false)
 
         // disable all calls to domain moddevices.com
         $(document).ajaxSend(function (event, xhr, options) {
@@ -737,7 +737,7 @@ $('document').ready(function() {
         <div id="patchstorage" class="icon" data-message="Patchstorage"></div>
         <div id="banks-saving">Auto saving banks...</div>
         <div id="mod-update" class="status icon"></div>
-        <div id="blokas-update" class="status icon mod-hidden"></div>
+        <div id="pistomp-update" class="status icon mod-hidden"></div>
         <div id="mod-status" class="status icon mod-hidden"></div>
         <div id="mod-devices" class="status icon"></div>
         <div id="mod-settings" class="status icon mod-settings" data-message="Go to settings screen"></div>

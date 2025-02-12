@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html class="{% if blokas_enabled %}blokas{% end %}">
+<html class="{% if pistomp_enabled %}pistomp{% end %}">
 
 <!-- HEAD -->
 <head>
 <meta charset="UTF-8">
-<title>{% if blokas_enabled %}Settings{% else %}MOD Settings{% end %}</title>
+<title>{% if pistomp_enabled %}Settings{% else %}MOD Settings{% end %}</title>
 
-{% if blokas_enabled %}
+{% if pistomp_enabled %}
 <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
 {% else %}
 <link rel="apple-touch-icon" sizes="57x57" href="img/favicon/apple-icon-57x57.png">
@@ -929,7 +929,7 @@ $('document').ready(function() {
     <div id="bank-library">
         <div class="box clearfix">
             <header>
-                <h1 class="bottom top">{% if not blokas_enabled %}MOD {% end %}Settings</h1>
+                <h1 class="bottom top">{% if not pistomp_enabled %}MOD {% end %}Settings</h1>
             </header>
             <div class="pedalboards clearfix js-pedalboards"></div>
         </div>

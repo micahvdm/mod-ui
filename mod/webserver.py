@@ -46,8 +46,8 @@ from mod.settings import (DESKTOP, LOG, DEV_API,
                           DEFAULT_PEDALBOARD, DEFAULT_SNAPSHOT_NAME, DATA_DIR, KEYS_PATH, USER_FILES_DIR,
                           FAVORITES_JSON_FILE, PREFERENCES_JSON_FILE, USER_ID_JSON_FILE,
                           DEV_HOST, UNTITLED_PEDALBOARD_NAME, MODEL_CPU, MODEL_TYPE, PEDALBOARDS_LABS_HTTP_ADDRESS,
-                          PATCHSTORAGE_ENABLED, PATCHSTORAGE_API_URL, PATCHSTORAGE_PLATFORM_ID, PATCHSTORAGE_TARGET_ID, BLOKAS_ENABLED,
-                          BLOKAS_APT_PACKAGE, BLOKAS_UPDATE_CHECK_URL)
+                          PATCHSTORAGE_ENABLED, PATCHSTORAGE_API_URL, PATCHSTORAGE_PLATFORM_ID, PATCHSTORAGE_TARGET_ID, PISTOMP_ENABLED,
+                          PISTOMP_APT_PACKAGE, PISTOMP_UPDATE_CHECK_URL)
 
 from mod import (
     TextFileFlusher, WINDOWS,
@@ -738,35 +738,35 @@ class UpdateBegin(JsonRequestHandler):
         IOLoop.instance().add_callback(start_restore)
         self.write(True)
 
-# class APTCheck(JsonRequestHandler):
-#     def get(self):
-#         current = None
-#         latest = None
+class APTCheck(JsonRequestHandler):
+    def get(self):
+        current = None
+        latest = None
 
-#         try:
-#             out = subprocess.Popen(['dpkg', '-s', BLOKAS_APT_PACKAGE], stdout=subprocess.PIPE, encoding='utf8')
-#             while True:
-#                 line = out.stdout.readline()
-#                 if not line:
-#                     break
-#                 if 'Version:' in line:
-#                     current = line.replace('Version: ', '').strip()
-#                     break
-#        
-#        except Exception as err:
-#            logging.error(err)
-#
-#        try:
-#            data = json.loads(urllib.request.urlopen(BLOKAS_UPDATE_CHECK_URL).read())
-#            latest = data.get('latest')
-#
-#        except Exception as err:
-#            logging.error(err)        
-#
-#        self.write({
-#            "current": current,
-#            "latest": latest,
-#        })
+        try:
+            out = subprocess.Popen(['dpkg', '-s', PISTOMP_APT_PACKAGE], stdout=subprocess.PIPE, encoding='utf8')
+            while True:
+                line = out.stdout.readline()
+                if not line:
+                    break
+                if 'Version:' in line:
+                    current = line.replace('Version: ', '').strip()
+                    break
+       
+       except Exception as err:
+           logging.error(err)
+
+       try:
+           data = json.loads(urllib.request.urlopen(PISTOMP_UPDATE_CHECK_URL).read())
+           latest = data.get('latest')
+
+       except Exception as err:
+           logging.error(err)        
+
+       self.write({
+           "current": current,
+           "latest": latest,
+       })
 
 class APTUpgrade(JsonRequestHandler):
     def is_update_running():
@@ -1965,7 +1965,7 @@ class TemplateHandler(TimelessRequestHandler):
             'patchstorage_api_url': PATCHSTORAGE_API_URL,
             'patchstorage_platform_id': PATCHSTORAGE_PLATFORM_ID,
             'patchstorage_target_id': PATCHSTORAGE_TARGET_ID,
-            'blokas_enabled': 'true' if BLOKAS_ENABLED else 'false'
+            'pistomp_enabled': 'true' if PISTOMP_ENABLED else 'false'
         }
         return context
 
@@ -2017,7 +2017,7 @@ class TemplateHandler(TimelessRequestHandler):
             'preferences': json.dumps(prefs),
             'bufferSize': get_jack_buffer_size(),
             'sampleRate': get_jack_sample_rate(),
-            'blokas_enabled': 'true' if BLOKAS_ENABLED else 'false'
+            'pistomp_enabled': 'true' if PISTOMP_ENABLED else 'false'
         }
         return context
 
@@ -2444,7 +2444,7 @@ application = web.Application(
             (r"/update/download/", UpdateDownload),
             (r"/update/begin", UpdateBegin),
 
-            #(r"/apt/check", APTCheck),
+            (r"/apt/check", APTCheck),
             (r"/apt/upgrade", APTUpgrade),
 
             (r"/controlchain/download/", ControlChainDownload),
